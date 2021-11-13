@@ -298,6 +298,10 @@ def customer_home(customer_email,error):
 # def logout():
 # 	session.pop('username')
 # 	return redirect('/')
+@app.route('/status_search', methods=['GET', 'POST'])
+def status_search():
+	return
+
 
 @app.route('/upcoming_flight/search',methods=['GET', 'POST'])
 def upcoming_flight_search():
