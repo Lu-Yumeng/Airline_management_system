@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+{# action: 提交到的地址, method: 表示提交的方式 #}
+<form action="/add_data" method="post">
+{# 设置隐藏字段csrf_token , 只要使用了CSRFProtect,然后使用模板渲染的时候就可以直接使用csrf_token()方法#}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    作者: <input type="text" name="author"><br>
+    书籍: <input type="text" name="book"><br>
+    <input type="submit" value="添加"><br>
+    {% for message in get_flashed_messages() %}
+        <span style="color: red;">{{ message }}</span>
+    {% endfor %}
+</form>
+
+<hr>
+
+{# 数据展示 #}
+<ul>
+    {# 遍历作者 #}
+    {% for author in authors %}
+{#        <li>作者: {{ author.name }}</li>#}
+{#        <li>作者: {{ author.name }} <a href="/delete_author/{{ author.id }}">删除</a></li>#}
+        <li>作者: {{ author.name }} <a href="{{ url_for("delete_author",author_id=author.id) }}">删除</a></li>
+
+        {# 遍历作者的书籍 #}
+        <ul>
+            {% for book in author.books %}
+{#                <li>书籍: {{ book.name }} </li>#}
+                <li>书籍: {{ book.name }} <a href="/delete_book/{{ book.id }}">删除</a></li>
+            {% endfor %}
+
+        </ul>
+    {% endfor %}
+
+</ul>
+
+
+
+</body>
+</html>
