@@ -207,10 +207,10 @@ def registerAuth_agent():
 		cursor.execute(ins1, (email, password, booking_agent_id))
 		#here we need to input a list of things
 		ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
-		cursor.execute(ins1, (email, password, booking_agent_id))
+		cursor.execute(ins2, (email, airline_name))
 		conn.commit()
 		cursor.close()
-		return render_template('login.html')
+		return render_template('login.html', data2) #把列表给前端
 
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
