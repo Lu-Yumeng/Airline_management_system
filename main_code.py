@@ -168,6 +168,7 @@ def registerAuth_customer():
 		cursor.close()
 		return render_template('login.html')
 
+#Still working on======================================================================================================================
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
 def registerAuth_agent():
 	#grabs information from the forms
@@ -178,32 +179,35 @@ def registerAuth_agent():
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM customer WHERE email = %s'
-	cursor.execute(query, (email))
+	query_email = 'SELECT * FROM booking_agent WHERE email = %s'
+	cursor.execute(query_email, (email))
 	#stores the results in a variable
-	data = cursor.fetchone()
+	data1 = cursor.fetchone()
 	#use fetchall() if you are expecting more than 1 data row
 	error = None
+
+	#executes query
+	query_airline = 'SELECT * FROM airline'
+	cursor.execute(query_airline)
+	#stores the results in a variable
+	data2 = cursor.fetchall()
+	
+
 	if password != password2:
 		error = "Password does not match"
 		return render_template('register.html', error = error)
-	if(data):
+	if(data1):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
 		return render_template('register.html', error = error)
 	else:
-		username = request.form["username"]
-		birthday = request.form["birthday"]
-		state = request.form["state"]
-		city = request.form["city"]
-		street = request.form["street"]
-		building = request.form["building"]
-		passport_num = request.form["passport number"]
-		passport_country = request.form["Passport Country"]
-		expiration = request.form["expiration date"]
-		phone = request.form["phone"]
-		ins = 'INSERT INTO user VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
+		booking_agent_id = request.form["booking_agent_id"]
+		airline_name = request.form["airline_name"]
+		ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
+		cursor.execute(ins1, (email, password, booking_agent_id))
+		#here we need to input a list of things
+		ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
+		cursor.execute(ins1, (email, password, booking_agent_id))
 		conn.commit()
 		cursor.close()
 		return render_template('login.html')
