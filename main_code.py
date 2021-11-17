@@ -168,13 +168,13 @@ def registerAuth_customer():
 		cursor.close()
 		return render_template('login.html')
 
-#Still working on======================================================================================================================
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
 def registerAuth_agent():
 	#grabs information from the forms
 	email = request.form['email']
 	password = request.form['password']
 	password2 = request.form['password2']
+	airline_name = request.form["airline_name"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -187,11 +187,10 @@ def registerAuth_agent():
 	error = None
 
 	#executes query
-	query_airline = 'SELECT * FROM airline'
-	cursor.execute(query_airline)
+	query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
+	cursor.execute(query_airline, (airline_name))
 	#stores the results in a variable
-	data2 = cursor.fetchall()
-	
+	data2 = cursor.fetchone()
 
 	if password != password2:
 		error = "Password does not match"
@@ -202,15 +201,22 @@ def registerAuth_agent():
 		return render_template('register.html', error = error)
 	else:
 		booking_agent_id = request.form["booking_agent_id"]
-		airline_name = request.form["airline_name"]
+		
 		ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
 		cursor.execute(ins1, (email, password, booking_agent_id))
-		#here we need to input a list of things
-		ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
-		cursor.execute(ins1, (email, password, booking_agent_id))
+		
+		if(data2):
+			ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
+			cursor.execute(ins2, (email, airline_name))
+		else:
+			ins3 = 'INSERT INTO airline VALUES(%s)'
+			cursor.execute(ins3, (airline_name))
+			ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
+			cursor.execute(ins2, (email, airline_name))
+		
 		conn.commit()
 		cursor.close()
-		return render_template('login.html')
+		return render_template('login.html', data2) 
 
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
