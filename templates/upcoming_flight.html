@@ -62,8 +62,15 @@
             <td>{{row['price']}}</td>
             <td>{{row['status']}}</td>
             <td>{{row['airplane_id']}}</td>
-            {% if role  == "customer" %}
-            <td>Buy</td>
+            {% if role  == "Customer" %}
+                {% if row['status'] == "Upcoming"%}
+                    <td>
+                        <button type ="button"><a href = "{{ url_for('customer_purchase', customer_email = username, flight_num = row['flight_num'],airline_name = row['airline_name']) }}";> Buy</a></button> 
+                        </td>
+                {% else %}
+                    <td><button type="button" disabled> Buy</button>
+                    </td>
+                {% endif %}
             {% endif %}
 
             {% if role == "agent" %}

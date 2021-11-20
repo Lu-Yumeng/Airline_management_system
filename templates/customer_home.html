@@ -11,15 +11,16 @@
         <h1>  Welcome, {{session['username']}} ! 
         </h1>
     </form>
-    
+    {% if status %}
+    <p ><strong>Status: </strong> {{status}}</p>
+    {% endif %}
     <div>
         <h2>View my upcoming flights</h2> 
-        <form>
-            <form action="/customer_home/{{session['email']}}" method="POST">
+            <form action="/customer_home/{{session['username']}}" method="POST">
                 <div>
-                    <span>Departure Date</span>
+                    <span>Start Date</span>
                     <input type="date" name = "departure_date">
-                    <span>Arrival Date</span>
+                    <span>End Date</span>
                     <input type="date" name = "arrival_date">
                     <span>Flight Number</span>
                     <input type="text" name = "flight">
@@ -34,7 +35,9 @@
                     <button type="submit"> Search </button>
                 </div>
             </form>
-        </form>
+            {% if not search_flight %}
+            <p ><strong>Woops: </strong> You have no corresponding records! </p>
+            {% endif %}
         <table border = "1" cellspacing="0">
             <tr>
                 <td>airline_name</td>
@@ -66,23 +69,28 @@
     </div>
     <div>
         <h2>Track my spending</h2> 
-        <form  method="POST" action="/customer_home/{{session['email']}}">
+        <form  method="POST" action="/customer_home/{{session['username']}}">
+        <h3>Total money spent in the last year: {{year_money}}</h3></form>
+        <form  method="POST" action="/customer_home/{{session['username']}}">
             <div class="input-group mb-3">
               <span >Begin Date</span>
-              <input type="datetime-local" name = "begin_date" class="form-control"><br>
+              <input type="date" name = "begin_date" class="form-control"><br>
               <span >End Date</span>
-              <input type="datetime-local" name = "end_date" class="form-control">
+              <input type="date" name = "end_date" class="form-control">
               <button type="submit">Search</button>
             </div>
         </form>
         <!-- return an image -->
-        <img src="{{image}}" align="middle"/>
+        <img src="{{bar_chart}}" align="middle"/>
     </div>
     <div>
         <h2>More Options:</h2>
         <button onclick="window.location.href='/upcoming_flight'";> Search For Flights and Purchase</button> <br>
         <button onclick="window.location.href='/login'";> Log Out </button><br>
     </div>
+    {% if error %}
+    <p ><strong>Error: </strong> {{error }}</p>
+    {% endif %}
     
 </body>
 </body>

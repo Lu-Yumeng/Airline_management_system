@@ -2,6 +2,11 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+import base64
+from io import BytesIO
+plt.switch_backend('Agg') 
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -26,20 +31,21 @@ def welcome():
 @app.route('/upcoming_flight',methods=['GET', 'POST'])
 def upcoming_flight():
 	cursor = conn.cursor()
-	query = "SELECT * FROM flight WHERE status = 'upcoming'"
+	query = "SELECT * FROM flight"
 	cursor.execute(query)
 	data = cursor.fetchall()
 	try:
+		# coming from other homepage
 		if session['username']:
 			username = session["username"]
 			role = session["role"]
 			print(role)
-			return render_template("upcoming_flight.html", upcoming_flight = data, role = role)
+			return render_template("upcoming_flight.html", upcoming_flight = data, role = role,username = username)
+		# have not initialize 
 		else:
-			return render_template("upcoming_flight.html", upcoming_flight=data, role =session["role"])
+			return render_template("upcoming_flight.html", upcoming_flight=data, role =session["role"],username = session["username"])
 	except KeyError:
-		return render_template('upcoming_flight.html',error1 = "Bad Request")
-
+		return render_template('upcoming_flight.html', upcoming_flight = data)
 
 #Define route for login
 # login as an existed user
@@ -305,77 +311,201 @@ def registerAuth_staff():
 @app.route("/customer_home/<customer_email>", defaults={'error':''}, methods=["GET", "POST"])
 @app.route("/customer_home/<customer_email>/<error>", methods=["GET", "POST"])
 def customer_home(customer_email,error):
+	month = ["Jan","Feb","Mar","Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"]
 	try:
 		if session['username'] != customer_email:
 			print("case1")
 			return render_template("login.html", error="Bad Request")
-		# return the form of checking spending 
-		try:
-			if request.form["begin_date"]:
-				begin = request.form['begin_date']
-				end = request.form['end_date']
-				cursor = conn.cursor()
-				query = ""
-				if begin:
-					query += ""
-				if end:
-					query +=  ""
-				cursor.execute(query)
-				data = cursor.fetchall()
-				return render_template("customer_home.html", img = data)
-		except:
-			print("Not form Track spending")
-		try:
-			if request.form["departure_date"]:
-				query = 'select * from flight where status ="upcoming" and (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s))'
-				cursor = conn.cursor()
-				#executes query
-				if request.form['departure_date']:
-					d_date = datetime.datetime.strptime(request.form['departure_date'], '%Y-%m-%dT%H:%M') 
-					query += "and departure_time > '"
-					query += d_date
-					query += "'"
-				if request.form['arrival_date']:
-					a_date = datetime.datetime.strptime(request.form['arrival_date'], '%Y-%m-%dT%H:%M')  
-					query += "and arrival_time < "
-					query += a_date
-				if request.form['flight'] :
-					flight_num = request.form['flight'] 
-					query += "and flight_num = "
-					query += flight_num
-				if request.form['departure_airport']:
-					d_airport = request.form['departure_airport']
-					query += "and departure_airport = "
-					query += d_airport
-				if request.form['arrival_airport'] :
-					a_airport = request.form['arrival_airport'] 
-					query += "and arrival_airport = "
-					query += a_airport
-				if request.form['departure_city']:
-					d_city = request.form['departure_city'] 
-					add = "and (departure_airport in select * from airport where airport_city ="+ d_city +")"
-					query += add
-				if request.form['arrival_city']:
-					a_city = request.form['arrival_city'] 
-					add = "and (arrival_airport in select * from airport where airport_city ="+ a_city +")"
-					query += add
-				cursor.execute(query)
-				data = cursor.fetchall()
-				cursor.close()
-				return render_template("customer_home.html",search_flight = data)
-		except:
-			print("Not form2 View my upcoming flights")
-		query = 'select * from flight where status ="upcoming" and (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s))'
+		
+		# default view my flights
+		query = 'select * from flight where status ="Upcoming" and (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s))'
 		cursor = conn.cursor()
 		cursor.execute(query,session['username'])
 		data =  cursor.fetchall()
 		cursor.close()
-		# draw an image 
 
-		return render_template("customer_home.html",search_flight = data)
+		# default spending  
+		cur = datetime.date.today()
+		year_ago  = cur - datetime.timedelta(days=365)
+		print(cur,year_ago)
+		query = 'select * from flight where (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s and purchase_date <= %s and purchase_date >= %s)) '
+		cursor = conn.cursor()
+		cursor.execute(query,(session['username'],cur,year_ago))
+		money =  cursor.fetchall()
+		cursor.close()
+		year_money = 0
+		for i in money:
+			year_money += i['price']
+		print(year_money)
+
+		# default draw an image
+		query = "SELECT price, purchase_date FROM ticket NATURAL JOIN purchases NATURAL JOIN flight WHERE customer_email = '%s'"
+		cursor = conn.cursor()
+		cursor.execute(query % session['username'])
+		info = cursor.fetchall()
+		cursor.close()
+		half_ago = cur - datetime.timedelta(days=183)
+		last_month = cur.month
+		begin_month = last_month-6
+		spent = [0 for i in range(6)]
+		for record in info:
+			if record['purchase_date'] >= half_ago:
+				mon = record['purchase_date'].month
+				if last_month >= mon:
+					spent[5-last_month+mon] += record['price']
+				else:
+					spent[-12-last_month+mon] += record['price']
+		x_axis = [month[i] for i in range(begin_month,begin_month+6)]
+		plt.bar(x_axis,spent)
+		plt.title('Monthly spent')
+		plt.xlabel('Month')
+		plt.ylabel('Spent')
+		for a,b in zip(x_axis,spent):
+			plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
+		# save as binary file
+		buffer = BytesIO()
+		plt.savefig(buffer)
+		plot_data = buffer.getvalue()
+		# 将matplotlib图片转换为HTML
+		imb = base64.b64encode(plot_data)  # 对plot_data进行编码
+		ims = imb.decode()
+		image = "data:image/png;base64," + ims
+
+		# return the form of checking spending 
+		try:
+			if request.form["begin_date"]:
+				begin = request.form['begin_date']
+				begin = datetime.datetime.strptime(begin,'%Y-%m-%d')
+				year2 = begin.year
+				month2 = begin.month
+			if request.form['end_date']:
+				end = request.form['end_date']
+				year1 = end.year
+				month1 = end.month
+			else:
+				year1 = cur.year
+				month1 = cur.month
+			delta_month = (year1-year2)*12+(month1-month2)+1
+			ago = cur - datetime.timedelta(days=delta_month*30)
+			last_month = cur.month
+			begin_month = last_month-delta_month
+			spent = [0 for i in range(delta_month)]
+			for record in info:
+				if record['purchase_date'] >= ago:
+					mon = record['purchase_date'].month
+					year = record['purchase_date'].year
+					cur_delta_month = (year1-year)*12+(month1-mon)
+					spent[delta_month -1- cur_delta_month] += record['price']
+			x_axis = [month[i] for i in range(begin_month,begin_month+delta_month)]
+			print(spent,x_axis)
+			plt.clf()
+			plt.bar(x_axis,spent)
+			plt.title('Monthly spent')
+			plt.xlabel('Month')
+			plt.ylabel('Spent')
+			for a,b in zip(x_axis,spent):
+				plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
+			# save as binary file
+			buffer1 = BytesIO()
+			plt.savefig(buffer1)
+			plot_data = buffer1.getvalue()
+			# 将matplotlib图片转换为HTML
+			imb = base64.b64encode(plot_data)  # 对plot_data进行编码
+			ims = imb.decode()
+			image = "data:image/png;base64," + ims
+			return render_template("customer_home.html", search_flight = data, bar_chart = image,year_money = year_money,)
+		except:
+			print("Not form Track spending or no start date")
+		# return the form of checking flights 
+		try:
+			query = 'select * from flight where status ="Upcoming" and (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s))'
+			appendix = ""
+			
+			if request.form['departure_date']:
+				d_date = request.form['departure_date']
+				d_start = datetime.datetime.strptime(d_date,'%Y-%m-%d')
+				add = "and '"+ str(d_start)[:10] +"' <=departure_time"
+				appendix += add 
+			if request.form['arrival_date']:
+				a_date = request.form['arrival_date']
+				a_start = datetime.datetime.strptime(a_date, '%Y-%m-%d')
+				dd = "and '"+ str(a_start)[:10] +"' <=arrival_time"
+				appendix += query
+			if request.form['flight'] :
+				flight_num = request.form['flight'] 
+				appendix += "and flight_num = "
+				appendix += flight_num
+			if request.form['departure_airport']:
+				d_airport = request.form['departure_airport']
+				appendix += "and departure_airport = '"
+				appendix += d_airport
+				appendix += "'"
+			if request.form['arrival_airport'] :
+				a_airport = request.form['arrival_airport'] 
+				appendix += "and arrival_airport = '"
+				appendix += a_airport
+				appendix += "'"
+			if request.form['departure_city']:
+				d_city = request.form['departure_city'] 
+				add = "and departure_airport in (select airport_name from airport where airport_city ='"+ d_city +"')"
+				appendix += add
+			if request.form['arrival_city']:
+				a_city = request.form['arrival_city'] 
+				add = "and arrival_airport in (select airport_name from airport where airport_city = '"+ a_city +"')"
+				appendix += add
+
+			query += appendix
+			#cursor used to send queries
+			cursor = conn.cursor()
+			#executes query	
+			cursor.execute(query,session['username'])
+			print("succesfully executed")
+			data = cursor.fetchall()
+			cursor.close()
+			return render_template("customer_home.html",search_flight = data,year_money = year_money,bar_chart = image)
+		except:
+			print("Not form2 View my upcoming flights")
+		return render_template("customer_home.html",search_flight = data,year_money = year_money,bar_chart =image)
 	except:
 		print("case2")
 		return render_template("login.html", error= "Bad request")
+
+@app.route("/customer/flight_purchase/<customer_email>/<flight_num>/<airline_name>",methods=["GET", "POST"])
+def customer_purchase(customer_email,flight_num, airline_name):
+	try:
+		print(session["username"],customer_email)
+		if session['username'] != customer_email:
+			print("case1")
+			return render_template("upcoming_flight.html", error1="Bad Request: username does not match")
+		# if I had already buy the ticket
+		query = "select * from purchases, ticket where purchases.customer_email = %s and purchases.ticket_id = ticket.ticket_id and ticket.flight_num = %s "
+		cursor = conn.cursor()
+		cursor.execute(query,(customer_email,flight_num))
+		data =  cursor.fetchall()
+		if data:
+			print("Now we are here 5")
+			return render_template("customer_home.html",status = "You have already bought the ticket")
+		else:
+			# if I haven't buy the ticket
+			query = "select max(ticket_id) from purchases"
+			cursor = conn.cursor()
+			cursor.execute(query)
+			data = cursor.fetchall()
+			cursor.close()
+			if data:
+				ticket_id = data[0]["max(ticket_id)"]+1
+			else:
+				ticket_id = 1
+			cursor = conn.cursor()
+			query1 = "insert into ticket values(%s, %s, %s)"
+			cursor.execute(query1,(ticket_id,airline_name,flight_num))
+			query2 = "INSERT INTO purchases(ticket_id,customer_email,purchase_date) VALUES(%s,%s,%s)" 
+			cursor.execute(query2, (ticket_id, customer_email, datetime.datetime.now().strftime('%Y-%m-%d')))
+			cursor.close()
+			conn.commit()
+			return render_template("customer_home.html",status = "You have successfully buy the ticket!")
+	except:
+		return render_template("upcoming_flight.html",error1 = "Bad Request")
 
 # Agent
 @app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
