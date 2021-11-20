@@ -80,6 +80,7 @@ def loginAuth():
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
 
+#looks okay==========
 	elif role == "Airline Staff":
 		#cursor used to send queries
 		cursor = conn.cursor()
@@ -91,12 +92,14 @@ def loginAuth():
 		#use fetchall() if you are expecting more than 1 data row
 		cursor.close()
 		error = None
+
 		if(data):
 			#creates a session for the the user
 			#session is a built in
 			session['username'] = username
+			session['role'] = role
 			session.permanent = True
-			return redirect(url_for('home'))
+			return redirect(url_for('staff_home', staff_email = username))
 		else:
 			#returns an error message to the html page
 			error = 'Invalid login or username'
