@@ -168,13 +168,14 @@ def registerAuth_customer():
 		cursor.close()
 		return render_template('login.html')
 
-#Still working on======================================================================================================================
+#looks okay==========
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
 def registerAuth_agent():
 	#grabs information from the forms
 	email = request.form['email']
 	password = request.form['password']
 	password2 = request.form['password2']
+	airline_name = request.form["airline_name"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -184,33 +185,43 @@ def registerAuth_agent():
 	#stores the results in a variable
 	data1 = cursor.fetchone()
 	#use fetchall() if you are expecting more than 1 data row
+	#decide whether user already exist
 	error = None
 
-	#executes query
-	query_airline = 'SELECT * FROM airline'
-	cursor.execute(query_airline)
+	# if data1 != None:
+	# 	error = 'User already exists.'
+	# 	return render_template('agent_register.html', error = error)
+
+	#return a list of 
+	query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
+	cursor.execute(query_airline, (airline_name))
 	#stores the results in a variable
-	data2 = cursor.fetchall()
-	
+	data2 = cursor.fetchone()
+
+	if data2 == None:
+		error = 'Airline name does not exist in the database.'
+		return render_template('agent_register.html', error = error)
 
 	if password != password2:
 		error = "Password does not match"
-		return render_template('register.html', error = error)
+		return render_template('agent_register.html', error = error)
 	if(data1):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
-		return render_template('register.html', error = error)
+		return render_template('agent_register.html', error = error)
 	else:
 		booking_agent_id = request.form["booking_agent_id"]
-		airline_name = request.form["airline_name"]
+		
 		ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
 		cursor.execute(ins1, (email, password, booking_agent_id))
-		#here we need to input a list of things
+
 		ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
-		cursor.execute(ins1, (email, password, booking_agent_id))
+		cursor.execute(ins2, (email, airline_name))
+		
+		
 		conn.commit()
 		cursor.close()
-		return render_template('login.html')
+		return render_template('login.html') 
 
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
