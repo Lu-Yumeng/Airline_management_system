@@ -223,42 +223,58 @@ def registerAuth_agent():
 		cursor.close()
 		return render_template('login.html') 
 
+#looks okay=============
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
 	#grabs information from the forms
-	email = request.form['email']
+	#Here username is this person's email
+	username = request.form['email']
 	password = request.form['password']
 	password2 = request.form['password2']
+	airline_name = request.form["airline_name"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM customer WHERE email = %s'
-	cursor.execute(query, (email))
+	#here username is this person's email
+	query = 'SELECT * FROM airline_staff WHERE username = %s'
+	cursor.execute(query, (username))
 	#stores the results in a variable
 	data = cursor.fetchone()
 	#use fetchall() if you are expecting more than 1 data row
+
+	query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
+	cursor.execute(query_airline, (airline_name))
+	data2 = cursor.fetchone()
+
 	error = None
+
+	if data2 == None:
+		error = 'Airline name does not exist in the database.'
+		return render_template('staff_register.html', error = error)
+
 	if password != password2:
 		error = "Password does not match"
-		return render_template('register.html', error = error)
+		return render_template('staff_register.html', error = error)
+
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
-		return render_template('register.html', error = error)
+		return render_template('staff_register.html', error = error)
+
 	else:
-		username = request.form["username"]
-		birthday = request.form["birthday"]
-		state = request.form["state"]
-		city = request.form["city"]
-		street = request.form["street"]
-		building = request.form["building"]
-		passport_num = request.form["passport number"]
-		passport_country = request.form["Passport Country"]
-		expiration = request.form["expiration date"]
-		phone = request.form["phone"]
-		ins = 'INSERT INTO user VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
+		permission = request.form['permission']
+		firstName = request.form["first_name"]
+		lastName = request.form["last_name"]
+		d_birth = request.form['date_of_birth']
+		birthday = datetime.datetime.strptime(d_birth,'%Y-%m-%d')
+		
+		ins1 = 'INSERT INTO airline_staff VALUES(%s, %s, %s, %s, %s, %s)'
+		cursor.execute(ins1, (username, password, firstName, lastName, birthday, airline_name))
+		
+		ins2 = 'INSERT INTO permission VALUES(%s, %s)'
+		cursor.execute(ins2, (username, permission))
+
 		conn.commit()
 		cursor.close()
 		return render_template('login.html')
