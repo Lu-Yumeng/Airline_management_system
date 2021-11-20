@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View all tickets</title>
+</head>
+<body>
+    <!-- post the info back to upcoming_flight_search route and search -->
+    <form action="/upcoming_flight/search" method ="POST">
+    <!-- serach for upcoming flights -->
+    <div >
+        <span>Departure Date</span>
+        <input type="date" name = "departure_date">
+        <span>Arrival Date</span>
+        <input type="date" name = "arrival_date">
+        <span>Flight Number</span>
+        <input type="text" name = "flight">
+        <span>Departure Airport</span>
+        <input type="text" name = "departure_airport">
+        <span>Arrival Airport</span>
+        <input type="text" name = "arrival_airport">
+        <span>Departure City</span>
+        <input type="text" name = "departure_city">
+        <span>Arrival City</span>
+        <input type="text" name = "arrival_city">
+        <button type="submit"> Search </button>
+    </div>
+    </form>
+
+    <table border = "1" cellspacing="0">
+        <tr>
+            <td>airline_name</td>
+            <td>flight_num</td>
+            <td>departure_airport</td>
+            <td>departure_time</td>
+            <td>arrival_airport</td>
+            <td>arrival_time</td>
+            <td>price</td>
+            <td>status</td>
+            <td>airplane_id</td>
+            {% if role  == "Customer" %}
+            <td> Purchase </td>
+            {% endif %}
+
+            {% if role == "Agent" %}
+            <td>Customer Email</td>
+            <td>Buy</td>
+            {% endif %}
+        </tr>
+        {%for row in upcoming_flight%}
+        <tr>
+            <!-- if select all from db, then output is a dictionary,
+            if select specifically then the output is a list -->
+            <td>{{row['airline_name']}}</td>
+            <td>{{row['flight_num']}}</td>
+            <td>{{row['departure_airport']}}</td>
+            <td>{{row['departure_time']}}</td>
+            <td>{{row['arrival_airport']}}</td>
+            <td>{{row['arrival_time']}}</td>
+            <td>{{row['price']}}</td>
+            <td>{{row['status']}}</td>
+            <td>{{row['airplane_id']}}</td>
+            {% if role  == "customer" %}
+            <td>Buy</td>
+            {% endif %}
+
+            {% if role == "agent" %}
+            <td>Customer Email</td>
+            <td>Buy</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if error1 %}
+    <p class="error"><strong>Error: </strong> {{error1 }}</p>
+    {% endif %}
+
+    <button onclick="window.location.href='/login'";>Go Back</button>
+</body>
+</html>
