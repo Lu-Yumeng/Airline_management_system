@@ -95,7 +95,8 @@ def loginAuth():
 			#returns an error message to the html page
 			error = 'Invalid login or username or Wrong password'
 			return render_template('login.html', error=error)
-
+			
+#Looks Okay============
 	elif role == "Airline Staff":
 		#cursor used to send queries
 		cursor = conn.cursor()
@@ -107,18 +108,20 @@ def loginAuth():
 		#use fetchall() if you are expecting more than 1 data row
 		cursor.close()
 		error = None
+
 		if(data):
 			#creates a session for the the user
 			#session is a built in
 			session['username'] = username
 			session['role'] = role
 			session.permanent = True
-			return redirect(url_for('home'))
+			return redirect(url_for('staff_home', staff_email = username))
 		else:
 			#returns an error message to the html page
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
 
+#Looks Okay============
 	elif role =="Booking agent":
 		#cursor used to send queries
 		cursor = conn.cursor()
@@ -136,11 +139,12 @@ def loginAuth():
 			session['username'] = username
 			session['role'] = role
 			session.permanent = True
-			return redirect(url_for('home'))
+			return redirect(url_for('agent_home', agent_email = username))
 		else:
 			#returns an error message to the html page
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
+			
 
 #Authenticates the register
 @app.route('/registerAuth_customer', methods=['GET', 'POST'])
@@ -185,82 +189,113 @@ def registerAuth_customer():
 		cursor.close()
 		return render_template('login.html')
 
+#Looks Okay============
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
 def registerAuth_agent():
 	#grabs information from the forms
 	email = request.form['email']
 	password = request.form['password']
 	password2 = request.form['password2']
+	airline_name = request.form["airline_name"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM customer WHERE email = %s'
-	cursor.execute(query, (email))
+	query_email = 'SELECT * FROM booking_agent WHERE email = %s'
+	cursor.execute(query_email, (email))
 	#stores the results in a variable
-	data = cursor.fetchone()
+	data1 = cursor.fetchone()
 	#use fetchall() if you are expecting more than 1 data row
+	#decide whether user already exist
 	error = None
+
+	# if data1 != None:
+	# 	error = 'User already exists.'
+	# 	return render_template('agent_register.html', error = error)
+
+	#return a list of 
+	query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
+	cursor.execute(query_airline, (airline_name))
+	#stores the results in a variable
+	data2 = cursor.fetchone()
+
+	if data2 == None:
+		error = 'Airline name does not exist in the database.'
+		return render_template('agent_register.html', error = error)
+
 	if password != password2:
 		error = "Password does not match"
-		return render_template('register.html', error = error)
-	if(data):
+		return render_template('agent_register.html', error = error)
+	if(data1):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
-		return render_template('register.html', error = error)
+		return render_template('agent_register.html', error = error)
 	else:
-		username = request.form["username"]
-		birthday = request.form["birthday"]
-		state = request.form["state"]
-		city = request.form["city"]
-		street = request.form["street"]
-		building = request.form["building"]
-		passport_num = request.form["passport number"]
-		passport_country = request.form["Passport Country"]
-		expiration = request.form["expiration date"]
-		phone = request.form["phone"]
-		ins = 'INSERT INTO user VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
+		booking_agent_id = request.form["booking_agent_id"]
+		
+		ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
+		cursor.execute(ins1, (email, password, booking_agent_id))
+
+		ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
+		cursor.execute(ins2, (email, airline_name))
+		
+		
 		conn.commit()
 		cursor.close()
-		return render_template('login.html')
+		return render_template('login.html') 
 
+#Looks okay=======================================================================================
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
 	#grabs information from the forms
-	email = request.form['email']
+	#Here username is this person's email
+	username = request.form['email']
 	password = request.form['password']
 	password2 = request.form['password2']
+	airline_name = request.form["airline_name"]
 
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM customer WHERE email = %s'
-	cursor.execute(query, (email))
+	#here username is this person's email
+	query = 'SELECT * FROM airline_staff WHERE username = %s'
+	cursor.execute(query, (username))
 	#stores the results in a variable
 	data = cursor.fetchone()
 	#use fetchall() if you are expecting more than 1 data row
+
+	query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
+	cursor.execute(query_airline, (airline_name))
+	data2 = cursor.fetchone()
+
 	error = None
+
+	if data2 == None:
+		error = 'Airline name does not exist in the database.'
+		return render_template('staff_register.html', error = error)
+
 	if password != password2:
 		error = "Password does not match"
-		return render_template('register.html', error = error)
+		return render_template('staff_register.html', error = error)
+
 	if(data):
 		#If the previous query returns data, then user exists
 		error = "This user already exists"
-		return render_template('register.html', error = error)
+		return render_template('staff_register.html', error = error)
+
 	else:
-		username = request.form["username"]
-		birthday = request.form["birthday"]
-		state = request.form["state"]
-		city = request.form["city"]
-		street = request.form["street"]
-		building = request.form["building"]
-		passport_num = request.form["passport number"]
-		passport_country = request.form["Passport Country"]
-		expiration = request.form["expiration date"]
-		phone = request.form["phone"]
-		ins = 'INSERT INTO user VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-		cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
+		permission = request.form['permission']
+		firstName = request.form["first_name"]
+		lastName = request.form["last_name"]
+		d_birth = request.form['date_of_birth']
+		birthday = datetime.datetime.strptime(d_birth,'%Y-%m-%d')
+		
+		ins1 = 'INSERT INTO airline_staff VALUES(%s, %s, %s, %s, %s, %s)'
+		cursor.execute(ins1, (username, password, firstName, lastName, birthday, airline_name))
+		
+		ins2 = 'INSERT INTO permission VALUES(%s, %s)'
+		cursor.execute(ins2, (username, permission))
+
 		conn.commit()
 		cursor.close()
 		return render_template('login.html')
@@ -342,6 +377,17 @@ def customer_home(customer_email,error):
 		print("case2")
 		return render_template("login.html", error= "Bad request")
 
+# Agent
+@app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
+@app.route("/home_agent/<agent_email>/<error>", methods=["GET", "POST"])
+def agent_home(agent_email, error):
+	return render_template("agent_home.html")
+
+# Staff
+@app.route("/staff_home/<staff_email>", defaults={'error':''}, methods=["GET", "POST"])
+@app.route("/staff_agent/<staff_email>/<error>", methods=["GET", "POST"])
+def staff_home(staff_email, error):
+	return render_template("staff_home.html")
 
 # general 
 @app.route('/upcoming_flight/search',methods=['GET', 'POST'])
