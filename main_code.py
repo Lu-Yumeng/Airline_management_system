@@ -284,6 +284,19 @@ def registerAuth_staff():
 def customer_home(customer_email,error):
 	return render_template("customer_home.html")
 
+
+@app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
+@app.route("/home_agent/<agent_email>/<error>", methods=["GET", "POST"])
+def agent_home(agent_email, error):
+	return render_template("agent_home.html")
+
+
+@app.route("/staff_home/<staff_email>", defaults={'error':''}, methods=["GET", "POST"])
+@app.route("/staff_agent/<staff_email>/<error>", methods=["GET", "POST"])
+def staff_home(staff_email, error):
+	return render_template("staff_home.html")
+
+
 # # <order_id> is a parameter
 # @app.route('/order/<int:order_id>')
 # def get_order_id(order_id):
