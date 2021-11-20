@@ -6,69 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>agent_register</title>
     
-    <!-- <style type="text/css">
-        .menus{
-            float:left; 
-            color:#0C0;
-            font-size:18px;
-            border:2px #0C0 solid;
-            width:120px;
-            height:40px;
-            text-align:center;
-            padding-top:20px;
-            margin-right:-2px;
-        }
-        .add{
-            float:left; 
-            color:#999;
-            background-color:#F8F8F8;
-            font-size:32px;
-            border:1px #CCC solid;
-            border-left:2px #0C0 solid;
-            width:120px;
-            height:50px;
-            text-align:center;
-            padding-top:12px;
-            cursor:pointer;
-        }
-        </style>
-        <script type="text/javascript">
-        function myFunction() {
-            var table = document.getElementById("myTable");
-            var row = table.insertRow(0);
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            cell1.innerHTML = "NEW CELL1";
-            cell2.innerHTML = "NEW CELL2";
-            }
-
-        window.onload=function(){
-            var add1=document.getElementById("add");
-            add1.onclick=function(){
-                addElement();
-            }
-        }
-    
-        var i=1;
-        function addElement(){
-            var box=document.getElementById("box");
-            var oDiv=document.createElement("div");
-            oDiv.setAttribute("class","menus");
-            oDiv.appendChild(document.createTextNode(prompt("在此输入菜单名称")));
-            box.appendChild(oDiv);
-            i++;
-            box.insertBefore(oDiv,box.childNodes[i]);
-        }
-        </script> -->
-
-    
-
-
 </head>
 <body>
-    <!-- <script>
-        console.log('tesing', {{data2}});
-    </script> -->
+    
     <h1>Welcome to the Register Page!</h1>
     <form action="/registerAuth_agent" method="POST">
         This is the form for agent register
@@ -116,34 +56,20 @@
                 </td>
 
                 <td>
-                    <!-- <select>
-                    {%for row in data2%}
-                    <option value="id_{{ row['airline_name'] }}" > {{ row['airline_name'] }} </option>
-                    {% endfor %}
-                    </select> -->
-                    
                     
                     <input type = "text" name = "airline_name" placeholder = "" required/>
                 </td>
-                <!-- <td>
-                    <input type="button" name="add" value="+" onclick="addRow();">
-                </td>
-                <td>
-                    <div id="box">
-                        <div class="add" id="add"><b>+</b></div>
-                    </div>
-                </td> -->
+                
             </tr>
         </table>
-        <!-- <br>
-        <button onclick="myFunction()">Try it</button>     -->
-        <input type="submit"  name="submit" value="register" />
+        
+        <input type="submit"  name="submit" value="register" /><br>
+        <button type="button"><a href="/">GO BACK</a></button><br>
     </form>
     
-    <!-- <div id="box">
-        <div class="add" id="add"><b>+</b></div>
-    </div> -->
-    
+    {% if error %}
+        <p class="error"><strong>Error:</strong> {{error}}</p>
+    {% endif %}
 </body>
 </html>
 
