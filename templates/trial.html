@@ -1,0 +1,85 @@
+<!-- <form action="/airline_staff/{{session['username']}}" method="POST">
+        <h1>  Welcome, {{session['username']}} ! 
+        </h1>
+    </form> -->
+    <!-- {% if status %}
+    <p ><strong>Status: </strong> {{status}}</p>
+    {% endif %} -->
+    
+    <!-- <h2>View {{session['company']}} upcoming flights</h2> 
+    <form action="/airline_staff/{{session['username']}}" method="POST">
+        <div>
+            <span>Start Date</span>
+            <input type="date" name = "departure_date">
+            <span>End Date</span>
+            <input type="date" name = "arrival_date">
+            <span>Flight Number</span>
+            <input type="text" name = "flight">
+            <span>Departure Airport</span>
+            <input type="text" name = "departure_airport">
+            <span>Arrival Airport</span>
+            <input type="text" name = "arrival_airport">
+            <span>Departure City</span>
+            <input type="text" name = "departure_city">
+            <span>Arrival City</span>
+            <input type="text" name = "arrival_city">
+            <button type="submit"> Search </button>
+        </div>
+    </form> -->
+    <!-- <table border = "1" cellspacing="0">
+        <tr>
+            <td>airline_name</td>
+            <td>flight_num</td>
+            <td>departure_airport</td>
+            <td>departure_time</td>
+            <td>arrival_airport</td>
+            <td>arrival_time</td>
+            <td>price</td>
+            <td>status</td>
+            <td>airplane_id</td>
+            <td>Customers</td>
+        </tr> -->
+        <!-- {%for row in all_flight%}
+        <tr> -->
+            <!-- if select all from db, then output is a dictionary,
+            if select specifically then the output is a list -->
+            <!-- <td>1</td> -->
+            <!-- <td>{{row['airline_name']}}</td>
+            <td>{{row['flight_num']}}</td>
+            <td>{{row['departure_airport']}}</td>
+            <td>{{row['departure_time']}}</td>
+            <td>{{row['arrival_airport']}}</td>
+            <td>{{row['arrival_time']}}</td>
+            <td>{{row['price']}}</td>
+            <td>{{row['status']}}</td>
+            <td>{{row['airplane_id']}}</td>
+            <td><button type="submit"><a href = "{{ url_for('view_customer', flight_num = row['flight_num'],airline_name = row['airline_name']) }}";>View all customer </a> </button></td> -->
+        <!-- </tr>
+        {% endfor %} -->
+    <!-- </table> -->
+    <!-- {% if flgiht_num %}
+    <h3>Customer list for Airline {{airline_name}}, Flight number {{flight_num}}</h3>
+    <form action="/airline_staff/{{session['username']}}" method="POST">
+        <div>
+            <table>
+                <tr>
+                    <td>customer_email</td>
+                </tr>
+                {%for row in customer%}
+            <tr>
+    
+            <td>{{row['customer_email']}}</td>
+            </tr>
+            {% endfor %}
+            </table>
+        </div>
+    </form>
+    {% endif %}
+    {% if not customer %}
+    <p ><strong>Woops: </strong> No customer bought ticket for the flight! </p>
+    {% endif %}
+{% if session['status'] == "Admin" %}
+{% end if %}
+
+{% if session['status'] == "Operator" %}
+{% end if %} -->

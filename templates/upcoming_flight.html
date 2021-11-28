@@ -44,7 +44,7 @@
             <td> Purchase </td>
             {% endif %}
 
-            {% if role == "Agent" %}
+            {% if role == "Booking agent" %}
             <td>Customer Email</td>
             <td>Buy</td>
             {% endif %}
@@ -73,10 +73,27 @@
                 {% endif %}
             {% endif %}
 
-            {% if role == "agent" %}
-            <td>Customer Email</td>
-            <td>Buy</td>
+            {% if role == "Booking agent" %}
+                <!-- 之后改成可以选择的 -->
+                {% if row['status'] == "Upcoming"%}
+                <form action="{{url_for('agent_purchase', agent_email = username, flight_num = row['flight_num'], airline_name = row['airline_name'])}} "  method ="POST">
+                <td>
+                    <input type="text" name = "customer_email">
+                </td>
+                    <td>
+                        <button type="submit"> Buy </button> 
+                    </td>
+                </form>
+                {% else %}
+                <td>
+                </td>
+                    <td><button type="button" disabled> Buy</button>
+                    </td>
+                {% endif %}
+
+           
             {% endif %}
+           
         </tr>
         {% endfor %}
     </table>
