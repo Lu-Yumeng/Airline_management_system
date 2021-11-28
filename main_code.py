@@ -70,6 +70,7 @@ def register_staff():
 def register_agent():
 	return render_template('agent_register.html')
 
+#Looks Okay============
 # Authenticates the login account
 @app.route('/loginAuth', methods=['GET', 'POST'])
 # request.form[name] \name/ should be the name in the html file 
@@ -159,7 +160,7 @@ def loginAuth():
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
 			
-
+#Looks Okay============
 #Authenticates the register
 @app.route('/registerAuth_customer', methods=['GET', 'POST'])
 def registerAuth_customer():
@@ -258,7 +259,7 @@ def registerAuth_agent():
 		cursor.close()
 		return render_template('login.html') 
 
-#Looks okay=======================================================================================
+#Looks Okay============
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
 	#grabs information from the forms
@@ -517,6 +518,7 @@ def customer_purchase(customer_email,flight_num, airline_name):
 	except:
 		return render_template("upcoming_flight.html",error1 = "Bad Request")
 
+# Still working on =============================
 # Agent
 @app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
 @app.route("/home_agent/<agent_email>/<error>", methods=["GET", "POST"])
@@ -528,6 +530,7 @@ def agent_home(agent_email, error):
 			return render_template("login.html", error="Bad Request")
 		
 		# default view my flights
+<<<<<<< HEAD
 		#status: Upcoming, Delay, In progress
 		query = '''select flight.airline_name, flight.flight_num, 
 			flight.departure_airport, flight.departure_time, flight.arrival_airport, flight.arrival_time,
@@ -541,11 +544,15 @@ def agent_home(agent_email, error):
 			where ticket_id in 
 			(select purchases.ticket_id from purchases where booking_agent_id in 
 			(select booking_agent_id from booking_agent WHERE booking_agent.email = %s)))'''
+=======
+		query = 'select * from flight where status ="Upcoming" and (airline_name, flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where agent_email = %s))'
+>>>>>>> 2fa3eee6353e45ae26a515b0f29c02b078b55aef
 		cursor = conn.cursor()
 		cursor.execute(query,session['username'])
 		data =  cursor.fetchall()
 		cursor.close()
 
+<<<<<<< HEAD
 		# default commission  
 		cur = datetime.date.today()
 		month_ago  = cur - datetime.timedelta(days=30)
@@ -708,6 +715,103 @@ def agent_home(agent_email, error):
 			where ticket_id in 
 			(select purchases.ticket_id from purchases where booking_agent_id in 
 			(select booking_agent_id from booking_agent WHERE booking_agent.email = %s)))'''
+=======
+		# default spending  
+		cur = datetime.date.today()
+		year_ago  = cur - datetime.timedelta(days=365)
+		print(cur,year_ago)
+		query = 'select * from flight where (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where agent_email = %s and purchase_date <= %s and purchase_date >= %s)) '
+		cursor = conn.cursor()
+		cursor.execute(query,(session['username'],cur,year_ago))
+		money =  cursor.fetchall()
+		cursor.close()
+		year_money = 0
+		for i in money:
+			year_money += i['price']
+		print(year_money)
+
+		# default draw an image
+		query = "SELECT price, purchase_date FROM ticket NATURAL JOIN purchases NATURAL JOIN flight WHERE customer_email = '%s'"
+		cursor = conn.cursor()
+		cursor.execute(query % session['username'])
+		info = cursor.fetchall()
+		cursor.close()
+		half_ago = cur - datetime.timedelta(days=183)
+		last_month = cur.month
+		begin_month = last_month-6
+		spent = [0 for i in range(6)]
+		for record in info:
+			if record['purchase_date'] >= half_ago:
+				mon = record['purchase_date'].month
+				if last_month >= mon:
+					spent[5-last_month+mon] += record['price']
+				else:
+					spent[-12-last_month+mon] += record['price']
+		x_axis = [month[i] for i in range(begin_month,begin_month+6)]
+		plt.bar(x_axis,spent)
+		plt.title('Monthly spent')
+		plt.xlabel('Month')
+		plt.ylabel('Spent')
+		for a,b in zip(x_axis,spent):
+			plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
+		# save as binary file
+		buffer = BytesIO()
+		plt.savefig(buffer)
+		plot_data = buffer.getvalue()
+		# 将matplotlib图片转换为HTML
+		imb = base64.b64encode(plot_data)  # 对plot_data进行编码
+		ims = imb.decode()
+		image = "data:image/png;base64," + ims
+
+		# return the form of checking spending 
+		try:
+			if request.form["begin_date"]:
+				begin = request.form['begin_date']
+				begin = datetime.datetime.strptime(begin,'%Y-%m-%d')
+				year2 = begin.year
+				month2 = begin.month
+			if request.form['end_date']:
+				end = request.form['end_date']
+				year1 = end.year
+				month1 = end.month
+			else:
+				year1 = cur.year
+				month1 = cur.month
+			delta_month = (year1-year2)*12+(month1-month2)+1
+			ago = cur - datetime.timedelta(days=delta_month*30)
+			last_month = cur.month
+			begin_month = last_month-delta_month
+			spent = [0 for i in range(delta_month)]
+			for record in info:
+				if record['purchase_date'] >= ago:
+					mon = record['purchase_date'].month
+					year = record['purchase_date'].year
+					cur_delta_month = (year1-year)*12+(month1-mon)
+					spent[delta_month -1- cur_delta_month] += record['price']
+			x_axis = [month[i] for i in range(begin_month,begin_month+delta_month)]
+			print(spent,x_axis)
+			plt.clf()
+			plt.bar(x_axis,spent)
+			plt.title('Monthly spent')
+			plt.xlabel('Month')
+			plt.ylabel('Spent')
+			for a,b in zip(x_axis,spent):
+				plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
+			# save as binary file
+			buffer1 = BytesIO()
+			plt.savefig(buffer1)
+			plot_data = buffer1.getvalue()
+			# 将matplotlib图片转换为HTML
+			imb = base64.b64encode(plot_data)  # 对plot_data进行编码
+			ims = imb.decode()
+			image = "data:image/png;base64," + ims
+			return render_template("customer_home.html", search_flight = data, bar_chart = image,year_money = year_money,)
+		except:
+			print("Not form Track spending or no start date")
+		# return the form of checking flights 
+		try:
+			query = 'select * from flight where status ="Upcoming" and (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s))'
+>>>>>>> 2fa3eee6353e45ae26a515b0f29c02b078b55aef
 			appendix = ""
 			
 			if request.form['departure_date']:
@@ -751,15 +855,23 @@ def agent_home(agent_email, error):
 			print("succesfully executed")
 			data = cursor.fetchall()
 			cursor.close()
+<<<<<<< HEAD
 			return render_template("agent_home.html",search_flight = data, month_money = month_money)
 		except:
 			print("Not form2 View my upcoming flights")
 		return render_template("agent_home.html",search_flight = data, month_money = month_money, tnum = tnum, 
 		halfdata = halfdata, yeardata = yeardata, image1 = image1,image2 = image2)
+=======
+			return render_template("customer_home.html",search_flight = data,year_money = year_money,bar_chart = image)
+		except:
+			print("Not form2 View my upcoming flights")
+		return render_template("customer_home.html",search_flight = data,year_money = year_money,bar_chart =image)
+>>>>>>> 2fa3eee6353e45ae26a515b0f29c02b078b55aef
 	except:
 		print("case2")
 		return render_template("login.html", error= "Bad request")
 
+<<<<<<< HEAD
 
 @app.route("/agent/flight_purchase/<agent_email>/<flight_num>/<airline_name>",methods=["GET", "POST"])
 def agent_purchase(agent_email, flight_num, airline_name):
@@ -811,6 +923,25 @@ def agent_purchase(agent_email, flight_num, airline_name):
 			return render_template("agent_home.html", status = "You have already bought the ticket")
 		else:
 			print('here2222')
+=======
+#完全没有改==============
+@app.route("/agent/flight_purchase/<customer_email>/<flight_num>/<airline_name>",methods=["GET", "POST"])
+def customer_purchase(customer_email,flight_num, airline_name):
+	try:
+		print(session["username"],customer_email)
+		if session['username'] != customer_email:
+			print("case1")
+			return render_template("upcoming_flight.html", error1="Bad Request: username does not match")
+		# if I had already buy the ticket
+		query = "select * from purchases, ticket where purchases.customer_email = %s and purchases.ticket_id = ticket.ticket_id and ticket.flight_num = %s "
+		cursor = conn.cursor()
+		cursor.execute(query,(customer_email,flight_num))
+		data =  cursor.fetchall()
+		if data:
+			print("Now we are here 5")
+			return render_template("customer_home.html",status = "You have already bought the ticket")
+		else:
+>>>>>>> 2fa3eee6353e45ae26a515b0f29c02b078b55aef
 			# if I haven't buy the ticket
 			query = "select max(ticket_id) from purchases"
 			cursor = conn.cursor()
@@ -818,6 +949,7 @@ def agent_purchase(agent_email, flight_num, airline_name):
 			data = cursor.fetchall()
 			cursor.close()
 			if data:
+<<<<<<< HEAD
 				print('here3333')
 				ticket_id = data[0]["max(ticket_id)"]+1
 			else:
@@ -836,6 +968,21 @@ def agent_purchase(agent_email, flight_num, airline_name):
 			return render_template("agent_home.html",status = "You have successfully buy the ticket!")
 	except:
 	 	return render_template("upcoming_flight.html",error1 = "Bad Request")
+=======
+				ticket_id = data[0]["max(ticket_id)"]+1
+			else:
+				ticket_id = 1
+			cursor = conn.cursor()
+			query1 = "insert into ticket values(%s, %s, %s)"
+			cursor.execute(query1,(ticket_id,airline_name,flight_num))
+			query2 = "INSERT INTO purchases(ticket_id,customer_email,purchase_date) VALUES(%s,%s,%s)" 
+			cursor.execute(query2, (ticket_id, customer_email, datetime.datetime.now().strftime('%Y-%m-%d')))
+			cursor.close()
+			conn.commit()
+			return render_template("customer_home.html",status = "You have successfully buy the ticket!")
+	except:
+		return render_template("upcoming_flight.html",error1 = "Bad Request")
+>>>>>>> 2fa3eee6353e45ae26a515b0f29c02b078b55aef
 
 # Staff
 @app.route("/airline_staff/<staff_email>", defaults={'error':''}, methods=["GET", "POST"])
