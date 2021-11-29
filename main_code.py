@@ -224,11 +224,11 @@ def registerAuth_agent():
 	#decide whether user already exist
 	error = None
 
-	# if data1 != None:
-	# 	error = 'User already exists.'
-	# 	return render_template('agent_register.html', error = error)
+	if data1 != None:
+		error = 'User already exists.'
+		return render_template('agent_register.html', error = error)
 
-	#return a list of 
+	#return a list of airline names
 	query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
 	cursor.execute(query_airline, (airline_name))
 	#stores the results in a variable
@@ -241,10 +241,11 @@ def registerAuth_agent():
 	if password != password2:
 		error = "Password does not match"
 		return render_template('agent_register.html', error = error)
-	if(data1):
-		#If the previous query returns data, then user exists
-		error = "This user already exists"
-		return render_template('agent_register.html', error = error)
+
+	# if(data1):
+	# 	#If the previous query returns data, then user exists
+	# 	error = "This user already exists"
+	# 	return render_template('agent_register.html', error = error)
 	else:
 		booking_agent_id = request.form["booking_agent_id"]
 		
@@ -518,7 +519,7 @@ def customer_purchase(customer_email,flight_num, airline_name):
 	except:
 		return render_template("upcoming_flight.html",error1 = "Bad Request")
 
-# Still working on =============================
+# 有问题，要改，那个month传不进来==================
 # Agent
 @app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
 @app.route("/home_agent/<agent_email>/<error>", methods=["GET", "POST"])
@@ -569,6 +570,9 @@ def agent_home(agent_email, error):
 		for i in money:
 			month_money += i['price']
 		print('month_money', month_money)
+
+		session['month_money'] = str(month_money)
+		session['tnum'] = str(tnum)
 
 		# default draw an image
 		#Top customers in past half-year: num of tickets
@@ -639,13 +643,15 @@ def agent_home(agent_email, error):
 			name2.append(i['customer_email'])
 			value2.append(i['totprice'])
 		
-		print('here111')
+		# print('here111')
+		plt.clf()
 		plt.bar(name2, value2)
 		plt.title('Top 5 customers based on amount of commission received in the last year')
 		plt.ylabel('Total commission')
 		for a,b in zip(name2, value2):
 			plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
 		# save as binary file
+
 		buffer2 = BytesIO()
 		plt.savefig(buffer2)
 		plot_data2 = buffer2.getvalue()
@@ -653,7 +659,6 @@ def agent_home(agent_email, error):
 		imb2 = base64.b64encode(plot_data2)  # 对plot_data进行编码
 		ims2 = imb2.decode()
 		image2 = "data:image/png;base64," + ims2
-		
 		
 
 		# if user specify time span in View Commission
@@ -690,7 +695,7 @@ def agent_home(agent_email, error):
 
 			return render_template("agent_home.html", search_flight = data, month_money = month_money, tnum = tnum, 
 			halfdata = halfdata, yeardata = yeardata, inputnum = inputnum, inputmoney=inputmoney,
-			image1 = image1,image2 = image2)
+			image1 = image1, image2 = image2)
 		
 		except:
 			print("Not form View Commission or no start date")
@@ -757,7 +762,7 @@ def agent_home(agent_email, error):
 		except:
 			print("Not form2 View my upcoming flights")
 		return render_template("agent_home.html",search_flight = data, month_money = month_money, tnum = tnum, 
-		halfdata = halfdata, yeardata = yeardata, image1 = image1,image2 = image2)
+		halfdata = halfdata, yeardata = yeardata, image1 = image1, image2 = image2)
 	except:
 		print("case2")
 		return render_template("login.html", error= "Bad request")
@@ -783,7 +788,7 @@ def agent_purchase(agent_email, flight_num, airline_name):
 		fetchemail =  cursor.fetchone()
 		
 		if not (fetchemail):
-			return render_template("agent_home.html", status="Bad Request: customer does not exist")
+			return render_template("upcoming_flight.html", error1="Bad Request: customer does not exist")
 
 		#get booking agent id
 		query = """select booking_agent_id from booking_agent WHERE booking_agent.email = %s"""
@@ -835,9 +840,10 @@ def agent_purchase(agent_email, flight_num, airline_name):
 			print('herehere')
 			cursor.close()
 			conn.commit()
-			return render_template("agent_home.html",status = "You have successfully buy the ticket!")
+			return render_template("agent_home.html", month_money = int(session['month_money']), tnum = int(session['tnum']),
+							status = "You have successfully buy the ticket!")
 	except:
-	 	return render_template("upcoming_flight.html",error1 = "Bad Request")
+		return render_template("upcoming_flight.html",error1 = "Bad Request")
 
 # Staff
 @app.route("/airline_staff/<staff_email>", defaults={'error':''}, methods=["GET", "POST"])
