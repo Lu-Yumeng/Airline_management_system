@@ -843,6 +843,7 @@ def agent_purchase(agent_email, flight_num, airline_name):
 @app.route("/airline_staff/<staff_email>", defaults={'error':''}, methods=["GET", "POST"])
 @app.route("/airline_staff/<staff_email>/<error>", methods=["GET", "POST"])
 def staff_home(staff_email, error):
+	# try:
 	if session['username'] != staff_email:
 		print("case1")
 		return render_template("login.html", error="Bad Request")
@@ -854,7 +855,7 @@ def staff_home(staff_email, error):
 
 	# view all the booking agent
 	cursor = conn.cursor()
-	query ="select purchases.booking_agent_id from purchases where purchases.purchase_date <= %s  and purchases.purchase_date >= %s and purchases.ticket_id in (select ticket_id from ticket where airline_name = %s) group by purchases.booking_agent_id ORDER BY count(purchases.ticket_id) DESC LIMIT 5 "
+	query ="select purchases.booking_agent_id from purchases where purchases.purchase_date <= %s  and purchases.purchase_date >= %s and purchases.booking_agent_id is NOT NULL and purchases.ticket_id in (select ticket_id from ticket where airline_name = %s) group by purchases.booking_agent_id ORDER BY count(purchases.ticket_id) DESC LIMIT 5 "
 	today = datetime.date.today()
 	last_month = today - datetime.timedelta(days=31)
 	last_year = today - datetime.timedelta(days= 365)
@@ -862,7 +863,7 @@ def staff_home(staff_email, error):
 	lm_agent = cursor.fetchall()
 	cursor.execute(query,(today,last_year,session['company']))
 	ly_agent = cursor.fetchall()
-	query = "select purchases.booking_agent_id from purchases, flight,ticket where ticket.airline_name = %s and (ticket.airline_name, ticket.flight_num) = (flight.airline_name,flight.flight_num) and purchases.ticket_id =  ticket.ticket_id and purchases.purchase_date <= %s and purchases.purchase_date >= %s group by purchases.booking_agent_id ORDER BY sum(flight.price) DESC LIMIT 5"
+	query = "select purchases.booking_agent_id from purchases, flight,ticket where ticket.airline_name = %s and purchases.booking_agent_id is NOT NULL and (ticket.airline_name, ticket.flight_num) = (flight.airline_name,flight.flight_num) and purchases.ticket_id =  ticket.ticket_id and purchases.purchase_date <= %s and purchases.purchase_date >= %s group by purchases.booking_agent_id ORDER BY sum(flight.price) DESC LIMIT 5"
 	cursor.execute(query,(session['company'],today,last_year))
 	c_agent = cursor.fetchall()
 	cursor.close()
@@ -950,73 +951,73 @@ def staff_home(staff_email, error):
 
 @app.route('/airline_staff/<staff_email>/create_new_flight', methods=["GET", "POST"])
 def create_new_flight(staff_email):
-	# try:
-	if session['username'] != staff_email or session['status'] != "Admin":
-		return render_template("login.html", error="Bad Request")
-	print("here")
-	cursor = conn.cursor()
-	query = "select airport_name from airport"
-	cursor.execute(query)
-	all_airports = cursor.fetchall()
-	all = []
-	print("here2")
-	for i in all_airports:
-		all.append(i['airport_name'])
-	cursor.close()
-	print(all)
-
-	cursor = conn.cursor()
-	query = "select airplane_id from airplane where airline_name = %s"
-	cursor.execute(query,session['company'])
-	all_id = cursor.fetchall()
-	all_ids = []
-	cursor.close()
-	for i in all_id:
-		all_ids.append(i['airplane_id'])
-
 	try:
-		d_airport = request.form['departure_airport']
-		a_airport = request.form['arrival_airport']
-		print(d_airport)
-		print(a_airport)
-		d_time = request.form['departure_time']
-		a_time = request.form['arrival_time']
-		price = request.form['price']
-		status = request.form['Status']
-		airplane_id = request.form['airplane_id']
-		print("here1")
-
-		# check whether airport is the same
-		print("here3")
-		if d_airport == a_airport:
-			return render_template("create_new_flight.html",error = "Sorry, the departure and arrival aiport is the same ...",all = all,all_ids = all_ids)
-		
-		# check if the arrival time is later than departure time
-		if a_time <= d_time:
-			return render_template("create_new_flight.html",error = "Sorry, wrong time input ...",all = all,all_ids = all_ids)
-
-		# get the flight num
+		if session['username'] != staff_email or session['status'] != "Admin":
+			return render_template("login.html", error="Bad Request")
+		print("here")
 		cursor = conn.cursor()
-		query = "select max(flight_num) from flight where airline_name = %s"
+		query = "select airport_name from airport"
+		cursor.execute(query)
+		all_airports = cursor.fetchall()
+		all = []
+		print("here2")
+		for i in all_airports:
+			all.append(i['airport_name'])
+		cursor.close()
+		print(all)
+
+		cursor = conn.cursor()
+		query = "select airplane_id from airplane where airline_name = %s"
 		cursor.execute(query,session['company'])
-		flight_num = cursor.fetchone()
-		flight_num = flight_num['max(flight_num)']+1
+		all_id = cursor.fetchall()
+		all_ids = []
 		cursor.close()
-		print("try")
+		for i in all_id:
+			all_ids.append(i['airplane_id'])
 
-		cursor = conn.cursor()
-		query1 = "INSERT into flight values (%s,%s,%s,%s,%s,%s,%s,%s,%s) "
-		cursor.execute(query1,(session['company'],flight_num,d_airport,d_time,a_airport,a_time,price,status,airplane_id))
-		print("excecute")
-		conn.commit()
-		cursor.close()
-		print("before render")
-		return render_template("create_new_flight.html",success = "You have successfully created a new flight! ",flight_num = flight_num,all = all,all_ids = all_ids)
-	except: 
-		return render_template("create_new_flight.html", all = all,all_ids = all_ids)
-	# except:
-	# 	print("except2")
-	# 	return render_template("login.html", error="Bad Request")
+		try:
+			d_airport = request.form['departure_airport']
+			a_airport = request.form['arrival_airport']
+			print(d_airport)
+			print(a_airport)
+			d_time = request.form['departure_time']
+			a_time = request.form['arrival_time']
+			price = request.form['price']
+			status = request.form['Status']
+			airplane_id = request.form['airplane_id']
+			print("here1")
+
+			# check whether airport is the same
+			print("here3")
+			if d_airport == a_airport:
+				return render_template("create_new_flight.html",error = "Sorry, the departure and arrival aiport is the same ...",all = all,all_ids = all_ids)
+			
+			# check if the arrival time is later than departure time
+			if a_time <= d_time:
+				return render_template("create_new_flight.html",error = "Sorry, wrong time input ...",all = all,all_ids = all_ids)
+
+			# get the flight num
+			cursor = conn.cursor()
+			query = "select max(flight_num) from flight where airline_name = %s"
+			cursor.execute(query,session['company'])
+			flight_num = cursor.fetchone()
+			flight_num = flight_num['max(flight_num)']+1
+			cursor.close()
+			print("try")
+
+			cursor = conn.cursor()
+			query1 = "INSERT into flight values (%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+			cursor.execute(query1,(session['company'],flight_num,d_airport,d_time,a_airport,a_time,price,status,airplane_id))
+			print("excecute")
+			conn.commit()
+			cursor.close()
+			print("before render")
+			return render_template("create_new_flight.html",success = "You have successfully created a new flight! ",flight_num = flight_num,all = all,all_ids = all_ids)
+		except: 
+			return render_template("create_new_flight.html", all = all,all_ids = all_ids)
+	except:
+		print("except2")
+		return render_template("login.html", error="Bad Request")
 	
 
 @app.route('/airline_staff/<staff_email>/add_new_airplanes', methods=["GET", "POST"])
@@ -1024,18 +1025,77 @@ def add_new_airplanes(staff_email):
 	try:
 		if session['username'] != staff_email or session['status'] != "Admin":
 			return render_template("login.html", error="Bad Request")
+		try:
+			airplane_id = request.form["airplane_id"]
+			seats = request.form["seats"]
+			print(airplane_id,seats)
+			print(type(airplane_id))
+			try:
+				airplane_id = int(airplane_id)
+				print("here1")
+				seats = int(seats)
+				print("here2")
+				query = "select airplane_id from airplane where airline_name = %s"
+				cursor = conn.cursor()
+				cursor.execute(query,(session['company']))
+				cursor.close()
+				print("here3")
+				all_id = cursor.fetchall()
+				all_ids = []
+				print("here4")
+				for i in all_id:
+					all_ids.append(i["airplane_id"])
+				print(all_ids)
+				if airplane_id in all_ids:
+					return render_template("add_new_airplanes.html",error = "Input Airplane ID already exists ... ")
+				else:
+					query = "INSERT INTO airplane values (%s,%s,%s)"
+					cursor = conn.cursor()
+					print("here6")
+					print(query,session['company'],airplane_id,seats)
+					cursor.execute(query,(session['company'],airplane_id,seats))
+					print("here7")
+					cursor.close()
+					conn.commit()
+					print("here8")
+					return render_template("add_new_airplanes.html", success = "Success: ", airplane_id = airplane_id)
+			except:
+				return render_template("add_new_airplanes.html",error = "Input Airplane ID or seats is not an integer ... ")
+		except:
+			return render_template("add_new_airplanes.html")
 	except:
 		return render_template("login.html", error="Bad Request")
-	return render_template("add_new_airplanes.html")
 
 @app.route('/airline_staff/<staff_email>/add_new_airports', methods=["GET", "POST"])
 def add_new_airports(staff_email):
 	try:
 		if session['username'] != staff_email or session['status'] != "Admin":
 			return render_template("login.html", error="Bad Request")
+		# if I get the form 
+		try:
+			name = request.form['name']
+			city = request.form['city']
+			print(name,city)
+			query = "select * from airport where airport_name = %s "
+			cursor = conn.cursor()
+			cursor.execute(query,(name.upper()))
+			data = cursor.fetchall()
+			if data:
+				return render_template("add_new_airports.html",error = "Sorry, airport already exists ...")
+			else:
+				print("here2")
+				print(name.upper(),city.upper())
+				query = "INSERT INTO airport values (%s,%s)"
+				cursor.execute(query,(name.upper(),city.upper()))
+				print("here3")
+				conn.commit()
+				cursor.close()
+				return render_template("add_new_airports.html",success = "Success: ",name = name.upper(), city = city.upper())
+		except:
+			return render_template("add_new_airports.html")
 	except:
 		return render_template("login.html", error="Bad Request")
-	return render_template("add_new_airports.html")
+	
 
 @app.route('/airline_staff/<staff_email>/grant_permission', methods=["GET", "POST"])
 def grant_permission(staff_email):

@@ -87,25 +87,40 @@
         <h2>View all the booking agent</h2>
         <table>
             <tr>
-                <td>Top 5 agent for the last  month</td>
+                <td><h4>Top 5 agent for the last  month:</h4></td>
             </tr>
             {%for row in lm_agent %}
             <tr>
                 <td>{{row['booking_agent_id']}}</td>
             </tr>
             {% endfor %}
-            <tr><td>Top 5 agent for last year</td></tr>
+            {% if not lm_agent %}
+            <tr>
+                <td> Not enough agent </td>
+            </tr>
+            {% endif %}
+            <tr><td><h4>Top 5 agent for last year: </h4></td></tr>
             {%for row in ly_agent %}
                 <tr>
                     <td>{{row['booking_agent_id']}}</td>
                 </tr>
             {% endfor %}
-            <tr><td>Top 5 agent based on last year's commssion</td></tr>
+            {% if not ly_agent %}
+            <tr>
+                <td> Not enough agent </td>
+            </tr>
+            {% endif %}
+            <tr><td><h4>Top 5 agent based on last year's commssion: </h4></td></tr>
             {%for row in c_agent%}
                 <tr>
                     <td>{{row['booking_agent_id']}}</td>
                 </tr>
             {% endfor %}
+            {% if not c_agent %}
+            <tr>
+                <td> Not enough agent </td>
+            </tr>
+            {% endif %}
         </table>
     </div>
     <div>
