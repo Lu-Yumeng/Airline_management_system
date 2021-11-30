@@ -75,7 +75,7 @@
 
             {% if role == "Booking agent" %}
                 <!-- 之后改成可以选择的 -->
-                {% if row['status'] == "Upcoming"%}
+                {% if row['status'] == "Upcoming" and row['airline_name'] in session['company']%}
                 <form action="{{url_for('agent_purchase', agent_email = username, flight_num = row['flight_num'], airline_name = row['airline_name'])}} "  method ="POST">
                 <td>
                     <input type="text" name = "customer_email">
