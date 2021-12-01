@@ -7,6 +7,30 @@
     <title>Add new booking agents</title>
 </head>
 <body>
-    This is the page for adding new booking agents!
+    <form action = "/airline_staff/add_booking_agents/{{session['username']}}" method="POST">
+        <h2>Welcome, {{session['username']}}!</h2>
+        <h3>You are adding new booking agents for airline {{session['company']}}.</h3>
+        <div >
+        </div><table>
+            <tr>
+                <td><span>Booking Agent Email</span></td>
+                <td>
+                    <input name="agentEmail" type = "text" required>
+                </td>
+            </tr>
+            
+        </table>
+        <button type="submit"> Add Agent </button><br>
+        </div>
+
+    <button onclick="window.location.href='/airline_staff/{{session.username|e}}'";>Go Back</button>
+
+    {% if status %}
+    <p ><strong>Status: </strong> {{status}}</p>
+    {% endif %}
+
+    {% if error %}
+    <p class="error"><strong>Error: </strong> {{error }}</p>
+    {% endif %}
 </body>
 </html>

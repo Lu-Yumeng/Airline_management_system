@@ -8,8 +8,8 @@
     
 </head>
 <body>
-    
     <h1>Welcome to the Register Page!</h1>
+    <h3>You are now registering as an airline staff : </h3>
     <form action="/registerAuth_staff" method="POST">
         This is the form for airline staff register
         <table ID='table1'>
@@ -84,24 +84,25 @@
             </tr>
             <!-- Airline staff Work For -->
             <tr>
-                <td>
-                    Airline you work for: 
-                </td>
-
-                <td>
-                    
-                    <input type = "text" name = "airline_name" placeholder = "" required/>
-                </td>
-                
-            </tr>
+                <td><span>Airpline you work for</span></td>
+                    <td><select name="airline_name" required>
+                        {% for i in airlines %}
+                        <option value = {{i}} > {{i}}</option>
+                        {% endfor %}
+                    </td>
+                </tr>
         </table>
         
         <input type="submit"  name="submit" value="register" /><br>
-        <button type="button"><a href="/">GO BACK</a></button><br>
+        <a href="/"><button type="button">BACK TO HOMEPAGE</button></a><br>
+        <a href="/login"><button type="button">Login</button></a><br>
     </form>
     
     {% if error %}
         <p class="error"><strong>Error:</strong> {{error}}</p>
+    {% endif %}
+    {% if success %}
+        <p class="error"><strong>Success: </strong> You have successfully registered for {{success}} </p>
     {% endif %}
 </body>
 </html>

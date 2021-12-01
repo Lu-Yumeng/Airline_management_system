@@ -65,12 +65,13 @@
         </div>
         </form>  
     </form>
+    <a href = "{{ url_for('staff_home', staff_email = session['username'], errro = '') }}";> <button type ="button">Go Back</button> </a>
     {% if error %}
     <p class="error"><strong>Error: </strong> {{error }}</p>
     {% endif %}
     {% if success %}
     <p class="error"> {{success}} The corresponding flight number is {{flight_num}}. </p>
     {% endif %}
-    <a href = "{{ url_for('staff_home', staff_email = session['username'], errro = '') }}";> <button type ="button">Go Back</button> </a>
+    
 </body>
 </html>

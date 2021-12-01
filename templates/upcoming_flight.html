@@ -10,6 +10,7 @@
     <!-- post the info back to upcoming_flight_search route and search -->
     <form action="/upcoming_flight/search" method ="POST">
     <!-- serach for upcoming flights -->
+    <h1>Search all upcoming flights here: </h1>
     <div >
         <span>Departure Date</span>
         <input type="date" name = "departure_date">
@@ -40,11 +41,11 @@
             <td>price</td>
             <td>status</td>
             <td>airplane_id</td>
-            {% if role  == "Customer" %}
+            {% if session['role']  == "Customer" %}
             <td> Purchase </td>
             {% endif %}
 
-            {% if role == "Booking agent" %}
+            {% if session['role'] == "Booking agent" %}
             <td>Customer Email</td>
             <td>Buy</td>
             {% endif %}
@@ -62,7 +63,7 @@
             <td>{{row['price']}}</td>
             <td>{{row['status']}}</td>
             <td>{{row['airplane_id']}}</td>
-            {% if role  == "Customer" %}
+            {% if session['role']  == "Customer" %}
                 {% if row['status'] == "Upcoming"%}
                     <td>
                         <button type ="button"><a href = "{{ url_for('customer_purchase', customer_email = username, flight_num = row['flight_num'],airline_name = row['airline_name']) }}";> Buy</a></button> 
@@ -73,7 +74,7 @@
                 {% endif %}
             {% endif %}
 
-            {% if role == "Booking agent" %}
+            {% if session['role'] == "Booking agent" %}
                 <!-- 之后改成可以选择的 -->
                 {% if row['status'] == "Upcoming" and row['airline_name'] in session['company']%}
                 <form action="{{url_for('agent_purchase', agent_email = username, flight_num = row['flight_num'], airline_name = row['airline_name'])}} "  method ="POST">
@@ -100,7 +101,13 @@
     {% if error1 %}
     <p class="error"><strong>Error: </strong> {{error1 }}</p>
     {% endif %}
-
-    <button onclick="window.location.href='/login'";>Go Back</button>
+    {% if session['role'] == "Booking agent" %}
+    <button onclick="window.location.href='/agent_home/{{session.username|e}}'";>Go Back</button>
+    
+    {% elif session['role'] == "Customer" %}
+    <button onclick="window.location.href='/customer_home/{{session.username|e}}'";>Go Back</button>
+    {% else %}
+    <button onclick="window.location.href='/'";>Go Back</button>
+    {% endif %}
 </body>
 </html>
