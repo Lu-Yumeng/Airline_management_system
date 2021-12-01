@@ -63,14 +63,14 @@
         {% endfor %} 
     </table>
     
-    {% if session['status'] == "Admin" %}
+    {% if "Admin" in session['status']%}
     <div>
         <h2>
             <h2>More Options Available to Admin:</h2>
            <a href = "{{ url_for('create_new_flight', staff_email = session['username']) }}";> <button>Create New Flight</button></a><br>
             <a href = "{{ url_for('add_new_airplanes', staff_email = session['username']) }}"><button>Add New Airplane </button></a><br>
             <a href = "{{ url_for('add_new_airports', staff_email = session['username']) }}"> <button>Add new airport</button> </a><br>
-            <a href = "{{ url_for('grant_permission', staff_email = session['username']) }}"><button>Grant new permissions</button></a><br>
+            <a href = "{{ url_for('grant_permission', staff_email = session['username']) }}"><button>Grant new permission</button></a><br>
             <a href = "{{ url_for('add_booking_agents', staff_email = session['username']) }}"><button>Add booking agent </button></a><br>
 
         </h2>
@@ -78,7 +78,7 @@
     {% endif %}
 
    
-    {% if session['status'] == "Operator" %}
+    {% if "Operator" in session['status']%}
         <div>
             <h2>Change Status of Flight</h2>
         </div>
