@@ -1647,7 +1647,7 @@ def view_freq_c(staff_email, customer_email):
         cursor.close()
  
         
-        return render_template("view_freq_c.html", data=data)
+        return render_template("view_freq_c.html", data=data, customer_email=customer_email)
     except:
         print('Fail in view_freq_c')
         return render_template("login.html", error = "Bad Request")
