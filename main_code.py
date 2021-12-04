@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import base64
 from io import BytesIO
+from werkzeug.security import generate_password_hash,check_password_hash
 plt.switch_backend('Agg') 
 
 
@@ -35,6 +36,7 @@ def upcoming_flight():
     query = "SELECT * FROM flight where status = 'Upcoming'"
     cursor.execute(query)
     data = cursor.fetchall()
+    cursor.close()
     try:
         # coming from other homepage
         if session['username']:
@@ -93,23 +95,29 @@ def loginAuth():
         #cursor used to send queries
         cursor = conn.cursor()
         #executes query
-        query = 'SELECT * FROM customer WHERE email = %s and password = %s'
-        cursor.execute(query, (username, password))
+        query = 'SELECT password FROM customer WHERE email = %s'
+        cursor.execute(query, (username))
         #stores the results in a variable
-        data = cursor.fetchone()
+        db_pw = cursor.fetchone()
         #use fetchall() if you are expecting more than 1 data row
         cursor.close()
         error = None
-        if(data):
+        if(db_pw):
             #creates a session for the the user
             #session is a built in
-            session['username'] = username
-            session['role'] = role
-            session.permanent = True
-            return redirect(url_for('customer_home',customer_email = username))
+            db_pw = db_pw["password"]
+            flag = check_password_hash(db_pw,password)
+            if flag:
+                session['username'] = username
+                session['role'] = role
+                session.permanent = True
+                return redirect(url_for('customer_home',customer_email = username))
+            else:
+                error = 'Wrong password'
+            return render_template('login.html', error=error)
         else:
             #returns an error message to the html page
-            error = 'Invalid login or username or Wrong password'
+            error = 'Invalid login name'
             return render_template('login.html', error=error)
             
     #Looks Okay============
@@ -117,36 +125,41 @@ def loginAuth():
         #cursor used to send queries
         cursor = conn.cursor()
         #executes query
-        query = 'SELECT * FROM airline_staff WHERE username = %s and password = %s'
-        cursor.execute(query, (username, password))
+        query = 'SELECT * FROM airline_staff WHERE username = %s'
+        cursor.execute(query, username)
         #stores the results in a variable
-        data = cursor.fetchone()
+        db_pw = cursor.fetchone()
         #use fetchall() if you are expecting more than 1 data row
         cursor.close()
         error = None
-        print("all_info", data)
-        if(data):
-            #creates a session for the the user
-            #session is a built in
-            session['username'] = username
-            session['role'] = role
-            cursor = conn.cursor()
-            query_permission = "SELECT permission_type from permission where permission.username = %s"
-            cursor.execute(query_permission,username)
-            permission =  cursor.fetchall()
+        if(db_pw):
+            db_pw = db_pw["password"]
+            flag = check_password_hash(db_pw,password)
+            if flag:
+                #creates a session for the the user
+                #session is a built in
+                session['username'] = username
+                session['role'] = role
+                cursor = conn.cursor()
+                query_permission = "SELECT permission_type from permission where permission.username = %s"
+                cursor.execute(query_permission,username)
+                permission =  cursor.fetchall()
 
-            query_company = "select airline_name from airline_staff where airline_staff.username = %s "
-            cursor.execute(query_company,username)
-            company =  cursor.fetchall()
-            cursor.close()
-            # session['status'] = data[0]["permission_type"]
-            session['status'] = []
-            for i in permission:
-                session['status'].append(i['permission_type'])
-            session['company'] = company[0]['airline_name']
-            print(session['status'],session["company"])
-            session.permanent = True
-            return redirect(url_for('staff_home', staff_email = username))
+                query_company = "select airline_name from airline_staff where airline_staff.username = %s "
+                cursor.execute(query_company,username)
+                company =  cursor.fetchall()
+                cursor.close()
+                # session['status'] = data[0]["permission_type"]
+                session['status'] = []
+                for i in permission:
+                    session['status'].append(i['permission_type'])
+                session['company'] = company[0]['airline_name']
+                print(session['status'],session["company"])
+                session.permanent = True
+                return redirect(url_for('staff_home', staff_email = username))
+            else:
+                error = 'Wrong password'
+                return render_template('login.html', error=error)
         else:
             #returns an error message to the html page
             error = 'Invalid login or username'
@@ -156,34 +169,40 @@ def loginAuth():
         #cursor used to send queries
         cursor = conn.cursor()
         #executes query
-        query = 'SELECT * FROM booking_agent WHERE email = %s and password = %s'
-        cursor.execute(query, (username, password))
+        query = 'SELECT * FROM booking_agent WHERE email = %s '
+        cursor.execute(query, username)
         #stores the results in a variable
-        data = cursor.fetchone()
+        db_pw = cursor.fetchone()
         #use fetchall() if you are expecting more than 1 data row
         cursor.close()
         error = None
-        if(data):
-            #creates a session for the the user
-            #session is a built in
-            session['username'] = username
-            session['role'] = role
-            session.permanent = True
-   
-            # get the company that the agent works for
-            cursor = conn.cursor()
-            #executes query
-            query = 'SELECT airline_name from booking_agent_work_for WHERE email = %s'
-            cursor.execute(query, (username))
-            #stores the results in a variable
-            companyAll = cursor.fetchall()
-            #use fetchall() if you are expecting more than 1 data row
-            cursor.close()
-            session['company'] = []
-            for i in companyAll:
-                session['company'].append(i['airline_name'])
-            # print('HERE!!', session['company'])
-            return redirect(url_for('agent_home', agent_email = username))
+        if(db_pw):
+            db_pw = db_pw["password"]
+            flag = check_password_hash(db_pw,password)
+            if flag:
+                #creates a session for the the user
+                #session is a built in
+                session['username'] = username
+                session['role'] = role
+                session.permanent = True
+    
+                # get the company that the agent works for
+                cursor = conn.cursor()
+                #executes query
+                query = 'SELECT airline_name from booking_agent_work_for WHERE email = %s'
+                cursor.execute(query, (username))
+                #stores the results in a variable
+                companyAll = cursor.fetchall()
+                #use fetchall() if you are expecting more than 1 data row
+                cursor.close()
+                session['company'] = []
+                for i in companyAll:
+                    session['company'].append(i['airline_name'])
+                # print('HERE!!', session['company'])
+                return redirect(url_for('agent_home', agent_email = username))
+            else:
+                error = 'Wrong password'
+                return render_template('login.html', error=error)
         else:
             #returns an error message to the html page
             error = 'Invalid login or username'
@@ -204,6 +223,7 @@ def registerAuth_customer():
     cursor.execute(query, (email))
     #stores the results in a variable
     data = cursor.fetchone()
+    print(data)
     #use fetchall() if you are expecting more than 1 data row
     error = None
     if password != password2:
@@ -228,10 +248,12 @@ def registerAuth_customer():
         expiration = request.form["expiration date"]
         phone = int(request.form["phone"])
         ins = 'INSERT INTO customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        password = generate_password_hash(password)
+        print(len(password))
         cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
         conn.commit()
         cursor.close()
-        return render_template('customer_register.html',success = "username")
+        return render_template('customer_register.html',success = username)
 
 #这里改了一点点============
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
@@ -279,9 +301,12 @@ def registerAuth_agent():
         cursor.execute(query)
         booking_agent_id = cursor.fetchone()
         print(booking_agent_id)
-        id = booking_agent_id[max(booking_agent_id)] + 1
+        if booking_agent_id:
+            id = booking_agent_id[max(booking_agent_id)] + 1
+        else:
+            id = 1
         print(email,password,id)
-        
+        password = generate_password_hash(password)
         ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
         cursor.execute(ins1, (email, password, id))
 
@@ -337,7 +362,7 @@ def registerAuth_staff():
         lastName = request.form["last_name"]
         d_birth = request.form['date_of_birth']
         birthday = datetime.datetime.strptime(d_birth,'%Y-%m-%d')
-        
+        password = generate_password_hash(password)
         ins1 = 'INSERT INTO airline_staff VALUES(%s, %s, %s, %s, %s, %s)'
         cursor.execute(ins1, (username, password, firstName, lastName, birthday, airline_name))
 
@@ -1139,11 +1164,18 @@ def create_new_flight(staff_email):
 
 			# get the flight num
 			cursor = conn.cursor()
+			print("try1")
 			query = "select max(flight_num) from flight where airline_name = %s"
 			cursor.execute(query,session['company'])
+			print("try2")
 			flight_num = cursor.fetchone()
-			flight_num = flight_num['max(flight_num)']+1
+			print(flight_num)
+			if flight_num['max(flight_num)']:
+			    flight_num = flight_num['max(flight_num)']+1
+			else:
+			    flight_num = 1
 			cursor.close()
+			print(flight_num)
 			print("try")
 
 			cursor = conn.cursor()
@@ -1481,6 +1513,7 @@ def upcoming_flight_search():
     data = cursor.fetchall()
     cursor.close()
     error = None
+    print(data)
     if (data):
         #creates a session for the the user
         #session is a built in
