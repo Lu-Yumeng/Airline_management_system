@@ -1014,6 +1014,7 @@ def staff_home(staff_email, error):
 	cursor.close()
     
     #draw a pie chart for last month
+	
 	plt.clf()
 	plt.figure(figsize=(6,6))
 	plt.title('Total amount of revenue earned in the last month')
@@ -1021,10 +1022,11 @@ def staff_home(staff_email, error):
 	explode=[0.01, 0.01]
 	values=[revNoAMonth, revAMonth]
 	for i in range(len(values)):
-	    if not values[i]:
-	        values[i] = 0 
-
-	print("Hello here: ", values,explode,label)
+		if not values[i]:
+			values[i] = 0 
+	# print('Month value', revNoAMonth, revAMonth)
+    
+	# print("Hello here: ", values,explode,label)
 	plt.pie(values, explode=explode, labels=label, autopct='%1.1f%%')
 	plt.legend(loc='upper right')
 	# save as binary file
@@ -1037,6 +1039,10 @@ def staff_home(staff_email, error):
 	image3 = "data:image/png;base64," + ims3
 	plt.close()
 	
+	if revAMonth == None and revNoAMonth==None:
+		image3=None
+        
+    
 	#draw a pie chart for last year
 	plt.clf()
 	plt.figure(figsize=(6,6))
@@ -1058,6 +1064,9 @@ def staff_home(staff_email, error):
 	ims4 = imb4.decode()
 	image4 = "data:image/png;base64," + ims4
 	plt.close()
+ 
+	if revAYear == None and revNoAYear==None:
+    		image4=None
 
 
 	# view session
@@ -1442,7 +1451,238 @@ def change_flight_status( airline_name, staff_email, flight_num):
         print('change flight status last except here.')
         return render_template("login.html", error="Bad Request")
 
+# Looks Okay============
+@app.route('/airline_staff/detailed_reports/<staff_email>', methods=["GET", "POST"])
+def detailed_reports(staff_email):
+    month = ["Jan","Feb","Mar","Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"]
+    error = None
+    try:
+        
+        if session['username'] != staff_email:
+            print('Incorrect Username')
+            return render_template("login.html", error="Incorrect Username")
+            
+        # set date names
+        today = datetime.date.today()
+        lastMonth = today - datetime.timedelta(days=31)
+        lastYear = today - datetime.timedelta(days=365)
+        
+        # get the num of tkt last month
+        
+        query = """select COUNT(ticket.ticket_id) 
+            from purchases, ticket 
+            where ticket.airline_name = %s 
+            and ticket.ticket_id  = purchases.ticket_id 
+            and purchases.purchase_date <= %s 
+            and %s <= purchases.purchase_date"""
+        cursor = conn.cursor()
+        cursor.execute(query,(session['company'],today,lastMonth))
+        lastMTotTkt = cursor.fetchall()
+        cursor.execute(query,(session['company'],today,lastYear))
+        lastYTotTkt = cursor.fetchall()
+        cursor.close()
+        
+        # get the num of tkt last year
+        
+        query = """select ticket.ticket_id, purchases.purchase_date
+            from purchases, ticket 
+            where ticket.airline_name = %s
+            and ticket.ticket_id  = purchases.ticket_id 
+            and purchases.purchase_date <= %s 
+            and %s <= purchases.purchase_date"""
+        cursor = conn.cursor()
+        cursor.execute(query,(session['company'],today,lastYear))
+        info = cursor.fetchall()
+        cursor.close()
+        
+        thisMonth = today.month # last_month
+        begin_month = thisMonth-12 # begin_month
+        # print(type(today.year))
+        
+        pairs = {}
+        
+        for record in info:
+            if today > record['purchase_date'] >= lastYear:
+                # print("1")
+                mon = record['purchase_date'].month
+                print(mon)
+                
+                thisMon = month[mon-1]
+                pairs[thisMon] = pairs.get(thisMon, 0) +1
+                
+                # if thisMonth >= mon:
+                #     ticketNum[(5-thisMonth+mon)%12] += 1
+                # else:
+                #     ticketNum[(-12-thisMonth+mon)%12] += 1
+        
+        x_axis = [month[i] for i in range(begin_month,begin_month+12)]
+        ticketNum = []
+        for i in x_axis:
+            if i not in pairs.keys():
+                ticketNum.append(0)
+            else:
+                ticketNum.append(pairs[i])
+            
+        
+        plt.bar(x_axis,ticketNum)
+        plt.title('Month-wise Num of Tkt Sold in Last Year')
+        plt.xlabel('Month')
+        plt.ylabel('Ticket Number')
+        for a,b in zip(x_axis,ticketNum):
+            plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
+        # save as binary file
+        buffer = BytesIO()
+        plt.savefig(buffer)
+        plot_data = buffer.getvalue()
+        
 
+        # 将matplotlib图片转换为HTML
+        imb = base64.b64encode(plot_data)  # 对plot_data进行编码
+        ims = imb.decode()
+        image5 = "data:image/png;base64," + ims
+        plt.close()
+        
+        try:
+            # print('here0')
+            fromDate = request.form['fromDate']
+            fromDate1 = datetime.datetime.date(datetime.datetime.strptime(fromDate,'%Y-%m-%d'))
+            toDate = request.form['toDate']
+            toDate1 = datetime.datetime.date(datetime.datetime.strptime(toDate,'%Y-%m-%d'))
+            
+            # print('here1')
+            if fromDate > toDate:
+                error = 'invalid date input'
+                return render_template("detailed_reports.html", error=error)
+            
+            # print('here2')
+            query = """select ticket.ticket_id, purchases.purchase_date
+                from purchases, ticket 
+                where ticket.airline_name = %s
+                and ticket.ticket_id  = purchases.ticket_id 
+                and purchases.purchase_date <= %s 
+                and %s <= purchases.purchase_date"""
+            cursor = conn.cursor()
+            cursor.execute(query,(session['company'],toDate,fromDate))
+            dataRange = cursor.fetchall()
+            cursor.close()
+            print('here3')
+            # print(toDate, fromDate)
+            # print(fromDate.year, fromDate.month)
+            thisMonth = (toDate1.year, toDate1.month) # last_month
+            begin_month = (fromDate1.year, fromDate1.month) # begin_month
+            gap = toDate1.year - fromDate1.year
+            
+            pairs = {}
+            
+            # print(type(begin_month[0]), type(begin_month[1]))
+            curM = [begin_month[0], begin_month[1]]
+            # print('here4')
+            if gap > 0:
+                while curM[0] != thisMonth[0]:
+                    nameM = str(curM[0])+'-'+str(curM[1])
+                    pairs[nameM] = pairs.get(nameM, 0)
+                    curM[1] += 1
+                    if curM[1] == 13:
+                        curM[0] += 1
+                        curM[1] = 1
+            # print('here5')
+            if gap == 0:
+                print('here1')
+                print(curM[1] != thisMonth[1])
+                while curM[1] != thisMonth[1]:
+                    # print('here1')
+                    nameM = str(curM[0])+'-'+str(curM[1])
+                    # print('here1')
+                    pairs[nameM] = pairs.get(nameM, 0)
+                    # print('here1')
+                    curM[1] += 1
+                    # print('here1')
+            # print('here6')
+            # print(pairs)
+            
+            for record in dataRange:
+                
+                # print(type(toDate1),type(record['purchase_date']),type(fromDate1))
+                # print(toDate1 > record['purchase_date'])
+                if toDate1 > record['purchase_date'] >= fromDate1:
+                    # print("1")
+                    mon = record['purchase_date'].month
+                    # print('month', mon)
+                    
+                    thisMon = str(record['purchase_date'].year)+'-'+str(mon)
+                    # print(record['purchase_date'].year)
+                    pairs[thisMon] = pairs.get(thisMon, 0) +1
+                    # print('here1')
+                    
+            # print('here7')
+            # x_axis = [month[i] for i in range(begin_month,begin_month+12)]
+            x_axis = list(pairs.keys())
+            ticketNum = []
+            for i in x_axis:
+                if i not in pairs.keys():
+                    ticketNum.append(0)
+                else:
+                    ticketNum.append(pairs[i])
+                
+            # print('here8')
+            plt.bar(x_axis,ticketNum)
+            plt.title('Month-wise Num of Tkt Sold from ' + str(fromDate1) + ' to ' +str(toDate1))
+            plt.xlabel('Month')
+            plt.ylabel('Ticket Number')
+            for a,b in zip(x_axis,ticketNum):
+                plt.text(a,b, b, ha='center', va= 'bottom',fontsize=7)
+            # save as binary file
+            buffer = BytesIO()
+            plt.savefig(buffer)
+
+            plot_data = buffer.getvalue()
+            
+
+            # 将matplotlib图片转换为HTML
+            imb = base64.b64encode(plot_data)  # 对plot_data进行编码
+            ims = imb.decode()
+            image6 = "data:image/png;base64," + ims
+            plt.close()
+
+            return render_template("detailed_reports.html", lastMTotTkt=lastMTotTkt, image5=image5, lastYTotTkt=lastYTotTkt, image6 = image6)
+        except:
+            print('No user input in Detailed Report.')
+         
+        return render_template("detailed_reports.html", lastMTotTkt=lastMTotTkt, image5=image5, lastYTotTkt=lastYTotTkt)
+    except:
+        print('In router detailed report.')
+        return render_template("login.html", error="Bad Request")
+
+
+@app.route('/airline_staff/view_freq_c/<staff_email>/<customer_email>', methods=["GET", "POST"])
+def view_freq_c(staff_email, customer_email):
+    try:
+        
+        if session['username'] != staff_email:
+            print('Incorrect Username')
+            return render_template("login.html", error="Incorrect Username")
+        
+        
+        query = """SELECT flight.flight_num, flight.departure_airport, 
+            flight.departure_time, flight.arrival_airport, flight.arrival_time,
+            flight.price, flight.status, flight.airplane_id,
+            ticket.ticket_id, purchases.booking_agent_id, purchases.purchase_date
+            FROM flight, ticket, purchases
+            WHERE flight.airline_name = ticket.airline_name
+            AND flight.flight_num = ticket.flight_num
+            AND ticket.ticket_id = purchases.ticket_id
+            AND flight.airline_name = %s
+            AND purchases.customer_email = %s"""
+        cursor = conn.cursor()
+        cursor.execute(query,(session['company'], customer_email)) 
+        data = cursor.fetchall()
+        cursor.close()
+ 
+        
+        return render_template("view_freq_c.html", data=data, customer_email=customer_email)
+    except:
+        print('Fail in view_freq_c')
+        return render_template("login.html", error = "Bad Request")
 
 @app.route("/airline_staff/view_customer/<username>/<flight_num>/<airline_name>",methods=["GET", "POST"])
 def view_customer(flight_num, airline_name,username):	
