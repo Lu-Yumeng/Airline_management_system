@@ -89,7 +89,7 @@
 
     <div>
         <h2>View all the booking agent</h2>
-        <table>
+        <table border="1" cellspacing="0">
             <tr>
                 <td><h4>Top 5 agent for the last  month:</h4></td>
             </tr>
@@ -129,7 +129,7 @@
     </div>
     <div>
         <h2>View frequent customers</h2>
-        <table>
+        <table border="1" cellspacing="0">
             <tr>
                 <td>Frequent customer</td>
                 <td>View detail</td>
@@ -167,7 +167,7 @@
     </div>
     <div>
         <h2>View Top destinations</h2>
-        <table>
+        <table border="1" cellspacing="0">
             <tr>
                 <td><h4>Top 3 destination for the last three month</h4></td>
             </tr>
@@ -180,7 +180,8 @@
             {% endif %}
             {% endfor %}
         </table>
-        <table>
+        <p></p>
+        <table border="1" cellspacing="0">
             <td><h4>Top 3 destiontation for last year</h4></td>
             {%for row in lydes %}
             {%if row%}

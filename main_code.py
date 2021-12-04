@@ -212,121 +212,140 @@ def loginAuth():
 #Authenticates the register
 @app.route('/registerAuth_customer', methods=['GET', 'POST'])
 def registerAuth_customer():
-    #grabs information from the forms
-    email = request.form['email']
-    password = request.form['password']
-    password2 = request.form['password2']
-    #cursor used to send queries
-    cursor = conn.cursor()
-    #executes query
-    query = 'SELECT * FROM customer WHERE email = %s'
-    cursor.execute(query, (email))
-    #stores the results in a variable
-    data = cursor.fetchone()
-    print(data)
-    #use fetchall() if you are expecting more than 1 data row
-    error = None
-    if password != password2:
-        error = "Password does not match"
-        return render_template('customer_register.html', error = error)
-    elif(data):
-        #If the previous query returns data, then user exists
-        error = "This user already exists"
-        return render_template('customer_register.html', error = error)
-    else:
+    try:
+        #grabs information from the forms
+        email = request.form['email']
+        password = request.form['password']
+        password2 = request.form['password2']
+        #cursor used to send queries
+        cursor = conn.cursor()
+        #executes query
+        query = 'SELECT * FROM customer WHERE email = %s'
+        cursor.execute(query, (email))
+        #stores the results in a variable
+        data = cursor.fetchone()
+        print(data)
+        #use fetchall() if you are expecting more than 1 data row
+        error = None
+        if password != password2:
+            error = "Password does not match"
+            return render_template('customer_register.html', error = error)
+        elif(data):
+            #If the previous query returns data, then user exists
+            error = "This user already exists"
+            return render_template('customer_register.html', error = error)
+        else:
 
-        # how to store multivalue
-        # how to store as DATE
-        username = request.form["username"]
-        birthday = request.form["birthday"]
-        state = request.form["state"]
-        city = request.form["city"]
-        street = request.form["street"]
-        building = request.form["building"]
-        passport_num = request.form["passport number"]
-        passport_country = request.form["Passport Country"]
-        expiration = request.form["expiration date"]
-        phone = int(request.form["phone"])
-        ins = 'INSERT INTO customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
-        password = generate_password_hash(password)
-        print(len(password))
-        cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
-        conn.commit()
-        cursor.close()
-        return render_template('customer_register.html',success = username)
+            # how to store multivalue
+            # how to store as DATE
+            username = request.form["username"]
+            birthday = request.form["birthday"]
+            state = request.form["state"]
+            city = request.form["city"]
+            street = request.form["street"]
+            building = request.form["building"]
+            passport_num = request.form["passport number"]
+            passport_country = request.form["Passport Country"]
+            expiration = request.form["expiration date"]
+            phone = int(request.form["phone"])
+            ins = 'INSERT INTO customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+            password = generate_password_hash(password)
+            print(len(password))
+            cursor.execute(ins, (email, username, password,building, street, city,state, phone,passport_num,expiration,passport_country,birthday))
+            conn.commit()
+            cursor.close()
+            return render_template('customer_register.html',success = username)
+    except:
+        return render_template('customer_register.html',error = "Wrong Input")
 
 #这里改了一点点============
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
 def registerAuth_agent():
-    #grabs information from the forms
-    email = request.form['email']
-    password = request.form['password']
-    password2 = request.form['password2']
+    try:
+        #grabs information from the forms
+        email = request.form['email']
+        password = request.form['password']
+        password2 = request.form['password2']
 
-    #cursor used to send queries
-    cursor = conn.cursor()
-    #executes query
-    query_email = 'SELECT * FROM booking_agent WHERE email = %s'
-    cursor.execute(query_email, (email))
-    #stores the results in a variable
-    data1 = cursor.fetchone()
-    #use fetchall() if you are expecting more than 1 data row
-    #decide whether user already exist
-    error = None
+        #cursor used to send queries
+        cursor = conn.cursor()
+        #executes query
+        query_email = 'SELECT * FROM booking_agent WHERE email = %s'
+        cursor.execute(query_email, (email))
+        #stores the results in a variable
+        data1 = cursor.fetchone()
+        #use fetchall() if you are expecting more than 1 data row
+        #decide whether user already exist
+        error = None
 
-    if data1 != None:
-        error = 'User already exists.'
-        return render_template('agent_register.html', error = error)
+        if data1 != None:
+            error = 'User already exists.'
+            return render_template('agent_register.html', error = error)
 
-    # #return a list of airline names
-    # query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
-    # cursor.execute(query_airline, (airline_name))
-    # #stores the results in a variable
-    # data2 = cursor.fetchone()
+        # #return a list of airline names
+        # query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
+        # cursor.execute(query_airline, (airline_name))
+        # #stores the results in a variable
+        # data2 = cursor.fetchone()
 
-    # if data2 == None:
-    #     error = 'Airline name does not exist in the database.'
-    #     return render_template('agent_register.html', error = error)
+        # if data2 == None:
+        #     error = 'Airline name does not exist in the database.'
+        #     return render_template('agent_register.html', error = error)
 
-    if password != password2:
-        error = "Password does not match"
-        return render_template('agent_register.html', error = error)
+        if password != password2:
+            error = "Password does not match"
+            return render_template('agent_register.html', error = error)
 
-    # if(data1):
-    # 	#If the previous query returns data, then user exists
-    # 	error = "This user already exists"
-    # 	return render_template('agent_register.html', error = error)
-    else:
-        query = "select max(booking_agent_id) from booking_agent"
-        cursor.execute(query)
-        booking_agent_id = cursor.fetchone()
-        print(booking_agent_id)
-        if booking_agent_id:
-            id = booking_agent_id[max(booking_agent_id)] + 1
+        # if(data1):
+        # 	#If the previous query returns data, then user exists
+        # 	error = "This user already exists"
+        # 	return render_template('agent_register.html', error = error)
         else:
-            id = 1
-        print(email,password,id)
-        password = generate_password_hash(password)
-        ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
-        cursor.execute(ins1, (email, password, id))
+            query = "select max(booking_agent_id) from booking_agent"
+            cursor.execute(query)
+            booking_agent_id = cursor.fetchone()
+            print(booking_agent_id)
 
-        # ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
-        # cursor.execute(ins2, (email, airline_name))
-        
-        
-        conn.commit()
-        cursor.close()
-        return render_template('agent_register.html',id = id) 
+            if booking_agent_id[max(booking_agent_id)]:
+                id = booking_agent_id[max(booking_agent_id)] + 1
+            else:
+                id = 1
+            print(email,password,id)
+            password = generate_password_hash(password)
+            ins1 = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
+            cursor.execute(ins1, (email, password, id))
+
+            # ins2 = 'INSERT INTO booking_agent_work_for VALUES(%s, %s)'
+            # cursor.execute(ins2, (email, airline_name))
+            
+            
+            conn.commit()
+            cursor.close()
+            return render_template('agent_register.html',id = id) 
+    except:
+        return render_template('agent_register.html', error = "Invalid Input")
+
 
 #Looks okay============
 @app.route('/registerAuth_staff', methods=['GET', 'POST'])
 def registerAuth_staff():
+    query = "select airline_name from airline"
+    cursor = conn.cursor()
+    cursor.execute(query)
+    airline = cursor.fetchall()
+    cursor.close()
+    airlines = []
+    for i in airline:
+        airlines.append(i['airline_name'])
+
+    # try:
     #grabs information from the forms
     #Here username is this person's email
     username = request.form['email']
     password = request.form['password']
     password2 = request.form['password2']
     airline_name = request.form["airline_name"]
+    print("airline_name: ",airline_name)
 
     #cursor used to send queries
     cursor = conn.cursor()
@@ -339,23 +358,24 @@ def registerAuth_staff():
     #use fetchall() if you are expecting more than 1 data row
 
     query_airline = 'SELECT * FROM airline WHERE airline_name = %s'
-    cursor.execute(query_airline, (airline_name))
+    cursor.execute(query_airline, airline_name)
+    print(airline_name)
     data2 = cursor.fetchone()
 
     error = None
 
     if data2 == None:
         error = 'Airline name does not exist in the database.'
-        return render_template('staff_register.html', error = error)
+        return render_template('staff_register.html', error = error,airlines = airlines)
 
     if password != password2:
         error = "Password does not match"
-        return render_template('staff_register.html', error = error)
+        return render_template('staff_register.html', error = error,airlines = airlines)
 
     if(data):
         #If the previous query returns data, then user exists
         error = "This user already exists"
-        return render_template('staff_register.html', error = error)
+        return render_template('staff_register.html', error = error,airlines = airlines)
 
     else:
         firstName = request.form["first_name"]
@@ -371,8 +391,9 @@ def registerAuth_staff():
 
         conn.commit()
         cursor.close()
-        return render_template('staff_register.html',success = username)
-
+        return render_template('staff_register.html',success = username,airlines = airlines)
+    # except:
+    #     return render_template('staff_register.html', error = "Invalid Input",airlines = airlines )
 
 # customer 
 @app.route("/customer_home/<customer_email>", defaults={'error':''}, methods=["GET", "POST"])
@@ -572,7 +593,7 @@ def customer_purchase(customer_email,flight_num, airline_name):
             cursor.execute(query)
             data = cursor.fetchall()
             cursor.close()
-            if data:
+            if data[0]["max(ticket_id)"]:
                 ticket_id = data[0]["max(ticket_id)"]+1
             else:
                 ticket_id = 1

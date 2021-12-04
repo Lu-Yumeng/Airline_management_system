@@ -17,7 +17,7 @@
                 <td>
                     <select name="departure_airport" required>
                         {% for i in all %}
-                        <option value = {{i}} > {{i}}</option>
+                        <option value = "{{i}}" > {{i}}</option>
                         {% endfor %}
                     </select>
                 </td>
@@ -26,7 +26,7 @@
                 <td><span>Arrival Airport</span></td>
                 <td> <select name="arrival_airport" required>
                     {% for i in all %}
-                    <option value = {{i}} > {{i}}</option>
+                    <option value = "{{i}}" > {{i}}</option>
                     {% endfor %}
                 </select></td>
             </tr>
@@ -56,7 +56,7 @@
             <td><span>Airplane ID </span></td>
                 <td><select name="airplane_id" required>
                     {% for i in all_ids %}
-                    <option value = {{i}} > {{i}}</option>
+                    <option value = "{{i}}" > {{i}}</option>
                     {% endfor %}
                 </td>
             </tr>

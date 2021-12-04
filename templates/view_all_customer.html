@@ -27,5 +27,6 @@
     {% if not customer %}
         <p ><strong>Woops: </strong> No customer bought ticket for the flight! </p>
     {% endif %}
+    <a href = "{{ url_for('staff_home', staff_email = session['username'], errro = '') }}";> <button type ="button">Go Back</button> </a>
 </body>
 </html>
