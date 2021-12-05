@@ -258,7 +258,7 @@ def registerAuth_customer():
     except:
         return render_template('customer_register.html',error = "Wrong Input")
 
-#这里改了一点点============
+#Looks okay============
 @app.route('/registerAuth_agent', methods=['GET', 'POST'])
 def registerAuth_agent():
     try:
@@ -578,23 +578,63 @@ def customer_purchase(customer_email,flight_num, airline_name):
         if session['username'] != customer_email:
             print("case1")
             return render_template("upcoming_flight.html", error1="Bad Request: username does not match")
+        
+
         # if I had already buy the ticket
-        query = "select * from purchases, ticket where purchases.customer_email = %s and purchases.ticket_id = ticket.ticket_id and ticket.flight_num = %s "
+        query = """select * from purchases, ticket 
+            where purchases.customer_email = %s 
+            and purchases.ticket_id = ticket.ticket_id 
+            and ticket.flight_num = %s 
+            and ticket.airline_name = %s"""
         cursor = conn.cursor()
-        cursor.execute(query,(customer_email,flight_num))
+        cursor.execute(query,(customer_email,flight_num, airline_name))
         data =  cursor.fetchall()
-        if data:
-            print("Now we are here 5")
+        cursor.close()
+
+        # if there is no seats left
+        query = """SELECT airplane.seats
+            FROM ticket, flight, airplane
+            WHERE ticket.airline_name = flight.airline_name
+            AND ticket.flight_num = flight.flight_num
+            AND flight.airplane_id = airplane.airplane_id
+            AND flight.airline_name = %s
+            AND flight.flight_num = %s"""
+        cursor = conn.cursor()
+        cursor.execute(query,(airline_name, flight_num))
+        totalSeats =  cursor.fetchone()
+        totS = totalSeats['seats']
+        cursor.close()
+
+        query = """SELECT count(*)
+            FROM ticket
+            WHERE airline_name = %s
+            AND flight_num = %s"""
+        cursor = conn.cursor()
+        cursor.execute(query,(airline_name, flight_num))
+        soldSeats =  cursor.fetchone()
+        sldS = soldSeats['count(*)']
+        cursor.close()
+        
+        if sldS == totS:
+            print('NO SEATS: soldSeats == totalSeats')
+            return render_template("upcoming_flight.html", error1 = "No seats left for the flight.")
+
+        elif data:
+            print("Now we are here Customer purchase")
             return render_template("customer_home.html",status = "You have already bought the ticket")
-        else:
-            # if I haven't buy the ticket
+
+        else: # if I haven't buy the ticket
+
             query = "select max(ticket_id) from purchases"
             cursor = conn.cursor()
             cursor.execute(query)
             data = cursor.fetchall()
             cursor.close()
+
+            # if this ticket id already exists
             if data[0]["max(ticket_id)"]:
                 ticket_id = data[0]["max(ticket_id)"]+1
+
             else:
                 ticket_id = 1
             cursor = conn.cursor()
@@ -608,7 +648,7 @@ def customer_purchase(customer_email,flight_num, airline_name):
     except:
         return render_template("upcoming_flight.html",error1 = "Bad Request")
 
-# 有问题，要改，那个month传不进来==================
+# Looks okay???? [之前month问题]==================
 # Agent
 @app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
 @app.route("/home_agent/<agent_email>/<error>", methods=["GET", "POST"])
@@ -866,6 +906,10 @@ def agent_purchase(agent_email, flight_num, airline_name):
             print("case1")
             return render_template("upcoming_flight.html", error1="Bad Request: username does not match")
 
+        if airline_name not in session['company']:
+            print('case2')
+            return render_template("upcoming_flight.html", error1="Bad Request: You do not have permission to buy ticket from this company.")
+
         # get the customer email
         customer_email = request.form["customer_email"]
         print('customer_email', customer_email)
@@ -889,9 +933,9 @@ def agent_purchase(agent_email, flight_num, airline_name):
 
         # if I had already buy the ticket
         flight_num = int(flight_num)
-        print(flight_num, type(flight_num))
-        print('customerEmail', type(customer_email))
-        print('agentemail', type(agent_email))
+        # print(flight_num, type(flight_num))
+        # print('customerEmail', type(customer_email))
+        # print('agentemail', type(agent_email))
 
         query = """select * from purchases, ticket 
             where purchases.ticket_id = ticket.ticket_id 
@@ -900,13 +944,41 @@ def agent_purchase(agent_email, flight_num, airline_name):
         cursor = conn.cursor()
         cursor.execute(query, (flight_num, customer_email))
         data =  cursor.fetchall()
-        print('here1111')
+        cursor.close()
 
-        if data:
+        # if there is no seats left
+        query = """SELECT airplane.seats
+            FROM ticket, flight, airplane
+            WHERE ticket.airline_name = flight.airline_name
+            AND ticket.flight_num = flight.flight_num
+            AND flight.airplane_id = airplane.airplane_id
+            AND flight.airline_name = %s
+            AND flight.flight_num = %s"""
+        cursor = conn.cursor()
+        cursor.execute(query,(airline_name, flight_num))
+        totalSeats =  cursor.fetchone()
+        totS = totalSeats['seats']
+        cursor.close()
+        print('here1')
+
+        query = """SELECT count(*)
+            FROM ticket
+            WHERE airline_name = %s
+            AND flight_num = %s"""
+        cursor = conn.cursor()
+        cursor.execute(query,(airline_name, flight_num))
+        soldSeats =  cursor.fetchone()
+        sldS = soldSeats['count(*)']
+        cursor.close()
+        
+        if sldS == totS:
+            print('NO SEATS: soldSeats == totalSeats')
+            return render_template("upcoming_flight.html", error1 = "No seats left for the flight.")
+
+        elif data:
             print("Now we are here 5")
             return render_template("agent_home.html", status = "You have already bought the ticket")
         else:
-            print('here2222')
             # if I haven't buy the ticket
             query = "select max(ticket_id) from purchases"
             cursor = conn.cursor()
@@ -914,12 +986,9 @@ def agent_purchase(agent_email, flight_num, airline_name):
             data = cursor.fetchall()
             cursor.close()
             if data:
-                print('here3333')
                 ticket_id = data[0]["max(ticket_id)"]+1
             else:
-                print('here4444')
                 ticket_id = 1
-            print('here5555', type(ticket_id))
             cursor = conn.cursor()
             query1 = "insert into ticket values(%s, %s, %s)"
             cursor.execute(query1,(ticket_id, airline_name, flight_num))
@@ -1074,6 +1143,7 @@ def staff_home(staff_email, error):
 	for i in range(len(values)):
 	    if not values[i]:
 	        values[i] = 0 
+    
 	plt.pie(values, explode=explode, labels=label, autopct='%1.1f%%')
 	plt.legend(loc='upper right')	
 	# save as binary file
@@ -1472,7 +1542,7 @@ def change_flight_status( airline_name, staff_email, flight_num):
         print('change flight status last except here.')
         return render_template("login.html", error="Bad Request")
 
-# Looks Okay============
+# 有问题超过gap>1只能显示第一年============
 @app.route('/airline_staff/detailed_reports/<staff_email>', methods=["GET", "POST"])
 def detailed_reports(staff_email):
     month = ["Jan","Feb","Mar","Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"]
@@ -1564,18 +1634,15 @@ def detailed_reports(staff_email):
         plt.close()
         
         try:
-            # print('here0')
             fromDate = request.form['fromDate']
             fromDate1 = datetime.datetime.date(datetime.datetime.strptime(fromDate,'%Y-%m-%d'))
             toDate = request.form['toDate']
             toDate1 = datetime.datetime.date(datetime.datetime.strptime(toDate,'%Y-%m-%d'))
             
-            # print('here1')
             if fromDate > toDate:
                 error = 'invalid date input'
                 return render_template("detailed_reports.html", error=error)
             
-            # print('here2')
             query = """select ticket.ticket_id, purchases.purchase_date
                 from purchases, ticket 
                 where ticket.airline_name = %s
@@ -1586,40 +1653,43 @@ def detailed_reports(staff_email):
             cursor.execute(query,(session['company'],toDate,fromDate))
             dataRange = cursor.fetchall()
             cursor.close()
-            print('here3')
+
+
             # print(toDate, fromDate)
-            # print(fromDate.year, fromDate.month)
+            # print(fromDate1.year, toDate1.year)
             thisMonth = (toDate1.year, toDate1.month) # last_month
             begin_month = (fromDate1.year, fromDate1.month) # begin_month
+
             gap = toDate1.year - fromDate1.year
-            
+
+
             pairs = {}
             
             # print(type(begin_month[0]), type(begin_month[1]))
             curM = [begin_month[0], begin_month[1]]
-            # print('here4')
+            print('here4')
+
             if gap > 0:
-                while curM[0] != thisMonth[0]:
+                while (curM[0] != thisMonth[0]) or ((curM[1]-1) != thisMonth[1]):
+                    # print('curM[0], thisMonth[0], curM[1], thisMonth[1]',curM[0], thisMonth[0], curM[1], thisMonth[1] )
                     nameM = str(curM[0])+'-'+str(curM[1])
                     pairs[nameM] = pairs.get(nameM, 0)
                     curM[1] += 1
                     if curM[1] == 13:
                         curM[0] += 1
                         curM[1] = 1
-            # print('here5')
+
+            print('here5')
             if gap == 0:
                 print('here1')
                 print(curM[1] != thisMonth[1])
-                while curM[1] != thisMonth[1]:
-                    # print('here1')
+                while (curM[1]-1) != thisMonth[1]:
                     nameM = str(curM[0])+'-'+str(curM[1])
-                    # print('here1')
                     pairs[nameM] = pairs.get(nameM, 0)
-                    # print('here1')
                     curM[1] += 1
-                    # print('here1')
-            # print('here6')
-            # print(pairs)
+
+            # print('pairs', pairs)
+            # print('gap', gap)
             
             for record in dataRange:
                 
