@@ -1,6 +1,7 @@
 # Import Flask Library 导入flask
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
+import math
 import datetime
 import matplotlib.pyplot as plt
 import numpy as np
@@ -415,7 +416,6 @@ def customer_home(customer_email,error):
         # default spending  
         cur = datetime.date.today()
         year_ago  = cur - datetime.timedelta(days=365)
-        print(cur,year_ago)
         query = 'select * from flight where (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s and purchase_date <= %s and purchase_date >= %s)) '
         cursor = conn.cursor()
         cursor.execute(query,(session['username'],cur,year_ago))
@@ -439,10 +439,8 @@ def customer_home(customer_email,error):
         begin_month = last_month-6
         spent = [0 for i in range(6)]
         for record in info:
-            if cur > record['purchase_date'] >= half_ago:
-                print("1")
+            if cur >= record['purchase_date'] >= half_ago:
                 mon = record['purchase_date'].month
-                print(mon)
                 if last_month >= mon:
                     spent[(5-last_month+mon)%6] += record['price']
                 else:
@@ -450,7 +448,6 @@ def customer_home(customer_email,error):
                     
 
         x_axis = [month[i] for i in range(begin_month,begin_month+6)]
-        
         plt.bar(x_axis,spent)
         plt.title('Monthly spent')
         plt.xlabel('Month')
@@ -474,30 +471,48 @@ def customer_home(customer_email,error):
         # return the form of checking spending 
         try:
             if request.form["begin_date"]:
+                print("here1")
                 begin = request.form['begin_date']
-                begin = datetime.datetime.strptime(begin,'%Y-%m-%d')
-                year2 = begin.year
-                month2 = begin.month
-            if request.form['end_date']:
-                end = request.form['end_date']
-                year1 = end.year
-                month1 = end.month
+                begin = datetime.datetime.strptime(begin,'%Y-%m-%d').date()
             else:
-                year1 = cur.year
-                month1 = cur.month
+                print("here2")
+                begin = half_ago
+            if request.form['end_date']:
+                print("here3")
+                end = request.form['end_date']
+                end = datetime.datetime.strptime(end,'%Y-%m-%d').date()
+            else:
+                print("here4")
+                end = datetime.date.today()
+                
+    
+            year1 = end.year
+            year2 = begin.year
+
+            month1 = end.month
+            month2 = begin.month
+            
+            print(year1,month1, year2, month2)
             delta_month = (year1-year2)*12+(month1-month2)+1
-            ago = cur - datetime.timedelta(days=delta_month*30)
-            last_month = cur.month
-            begin_month = last_month-delta_month
             spent = [0 for i in range(delta_month)]
             for record in info:
-                if cur > record['purchase_date'] >= ago:
+                if end >= record["purchase_date"] >= begin:
+                    print("yes")
                     mon = record['purchase_date'].month
                     year = record['purchase_date'].year
-                    cur_delta_month = (year1-year)*12+(month1-mon)
-                    spent[(delta_month -1- cur_delta_month)% delta_month] += record['price']
-            x_axis = [month[i] for i in range(begin_month,begin_month+delta_month)]
-            print(spent,x_axis)
+                    cur_delta_month = (year-year2)*12+(mon-month2)
+                    print("cur_delta_month",cur_delta_month)
+                    spent[cur_delta_month] += record['price']
+            x_axis = []
+            x_axis.append("{}-{}".format(year2, month2))
+            for i in range(delta_month-1):
+                if month2 == 12:
+                    month2 = 1
+                    year2 +=1 
+                else:
+                    month2 +=1
+                x_axis.append("{}-{}".format(year2, month2))
+
             plt.clf()
             plt.bar(x_axis,spent)
             plt.title('Monthly spent')
@@ -517,6 +532,7 @@ def customer_home(customer_email,error):
             return render_template("customer_home.html", search_flight = data, bar_chart = image,year_money = year_money,)
         except:
             print("Not form Track spending or no start date")
+        
         # return the form of checking flights 
         try:
             query = 'select * from flight where status ="Upcoming" and (airline_name,flight_num) in (select airline_name, flight_num from ticket where ticket_id in (select purchases.ticket_id from purchases where customer_email = %s))'
