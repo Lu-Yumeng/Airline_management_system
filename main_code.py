@@ -225,6 +225,7 @@ def registerAuth_customer():
         cursor.execute(query, (email))
         #stores the results in a variable
         data = cursor.fetchone()
+        
         print(data)
         #use fetchall() if you are expecting more than 1 data row
         error = None
@@ -546,8 +547,8 @@ def customer_home(customer_email,error):
             if request.form['arrival_date']:
                 a_date = request.form['arrival_date']
                 a_start = datetime.datetime.strptime(a_date, '%Y-%m-%d')
-                dd = "and '"+ str(a_start)[:10] +"' <=arrival_time"
-                appendix += query
+                add = "and '"+ str(a_start)[:10] +"' >=arrival_time"
+                appendix += add
             if request.form['flight'] :
                 flight_num = request.form['flight'] 
                 appendix += "and flight_num = "
@@ -835,8 +836,8 @@ def agent_home(agent_email, error):
                 inputmoney += i['price']
             print('inputmoney', inputmoney)
 
-            return render_template("agent_home.html", search_flight = data, month_money = month_money, tnum = tnum, 
-            halfdata = halfdata, yeardata = yeardata, inputnum = inputnum, inputmoney=inputmoney,
+            return render_template("agent_home.html", search_flight = data, month_money = float(month_money)*0.3, tnum = tnum, 
+            halfdata = halfdata, yeardata = yeardata, inputnum = inputnum, inputmoney= float(inputmoney)*0.3,
             image1 = image1, image2 = image2)
         
         except:
@@ -867,8 +868,8 @@ def agent_home(agent_email, error):
             if request.form['arrival_date']:
                 a_date = request.form['arrival_date']
                 a_start = datetime.datetime.strptime(a_date, '%Y-%m-%d')
-                dd = "and '"+ str(a_start)[:10] +"' <=arrival_time"
-                appendix += query
+                add = "and '"+ str(a_start)[:10] +"' >=arrival_time"
+                appendix += add
             if request.form['flight'] :
                 flight_num = request.form['flight'] 
                 appendix += "and flight_num = "
@@ -900,10 +901,10 @@ def agent_home(agent_email, error):
             print("succesfully executed")
             data = cursor.fetchall()
             cursor.close()
-            return render_template("agent_home.html",search_flight = data, month_money = month_money)
+            return render_template("agent_home.html",search_flight = data, month_money = float(month_money)*0.3)
         except:
             print("Not form2 View my upcoming flights")
-        return render_template("agent_home.html",search_flight = data, month_money = month_money, tnum = tnum, 
+        return render_template("agent_home.html",search_flight = data, month_money = float(month_money)*0.3, tnum = tnum, 
         halfdata = halfdata, yeardata = yeardata, image1 = image1, image2 = image2)
     except:
         print("case2")
@@ -1006,7 +1007,7 @@ def agent_purchase(agent_email, flight_num, airline_name):
             print('herehere')
             cursor.close()
             conn.commit()
-            return render_template("agent_home.html", month_money = int(session['month_money']), tnum = int(session['tnum']),
+            return render_template("agent_home.html", month_money = 0.3 * float(session['month_money']), tnum = int(session['tnum']),
                             status = "You have successfully buy the ticket!")
     except:
         return render_template("upcoming_flight.html",error1 = "Bad Request")
@@ -1601,7 +1602,7 @@ def detailed_reports(staff_email):
         pairs = {}
         
         for record in info:
-            if today > record['purchase_date'] >= lastYear:
+            if today >= record['purchase_date'] >= lastYear:
                 # print("1")
                 mon = record['purchase_date'].month
                 print(mon)
@@ -1609,10 +1610,6 @@ def detailed_reports(staff_email):
                 thisMon = month[mon-1]
                 pairs[thisMon] = pairs.get(thisMon, 0) +1
                 
-                # if thisMonth >= mon:
-                #     ticketNum[(5-thisMonth+mon)%12] += 1
-                # else:
-                #     ticketNum[(-12-thisMonth+mon)%12] += 1
         
         x_axis = [month[i] for i in range(begin_month,begin_month+12)]
         ticketNum = []
@@ -1703,7 +1700,7 @@ def detailed_reports(staff_email):
                 
                 # print(type(toDate1),type(record['purchase_date']),type(fromDate1))
                 # print(toDate1 > record['purchase_date'])
-                if toDate1 > record['purchase_date'] >= fromDate1:
+                if toDate1 >= record['purchase_date'] >= fromDate1:
                     # print("1")
                     mon = record['purchase_date'].month
                     # print('month', mon)
@@ -1814,8 +1811,8 @@ def upcoming_flight_search():
         a_date = request.form['arrival_date']
         a_start = datetime.datetime.strptime(a_date, '%Y-%m-%d')
         a_end = a_start + datetime.timedelta(days=1)
-        dd = "and '"+ str(a_start)[:10] +"' <=arrival_time  and arrival_time <='"+ str(a_end)[:10]+"'"
-        appendix += query
+        add = "and '"+ str(a_start)[:10] +"' >=arrival_time  and arrival_time <='"+ str(a_end)[:10]+"'"
+        appendix += add
     if request.form['flight'] :
         flight_num = request.form['flight'] 
         appendix += "and flight_num = "
