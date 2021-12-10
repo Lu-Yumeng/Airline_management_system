@@ -662,7 +662,7 @@ def customer_purchase(customer_email,flight_num, airline_name):
     # except:
     #     return render_template("upcoming_flight.html",error1 = "Bad Request")
 
-# Looks okay???? [之前month问题]==================
+# Looks okay ==================
 # Agent
 @app.route("/agent_home/<agent_email>", defaults={'error':''}, methods=["GET", "POST"])
 @app.route("/home_agent/<agent_email>/<error>", methods=["GET", "POST"])
