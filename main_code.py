@@ -1551,7 +1551,7 @@ def change_flight_status( airline_name, staff_email, flight_num):
         print('change flight status last except here.')
         return render_template("login.html", error="Bad Request")
 
-# 有问题超过gap>1只能显示第一年============
+# Looks Okay============
 @app.route('/airline_staff/detailed_reports/<staff_email>', methods=["GET", "POST"])
 def detailed_reports(staff_email):
     month = ["Jan","Feb","Mar","Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"]
