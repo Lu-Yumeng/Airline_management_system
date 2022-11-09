@@ -22,19 +22,19 @@ Using this system, customers can search for flights,purchase flights ticket,view
 
 ## Project Overview
 - Login page
-![register](img/login.png)
+![login](img/login.png)
 
 - Register page
 ![register](img/register.png)
 
 - Flights Search page
-![register](img/serach_page.png)
+![search](img/search_page.png)
 
 - Customer Homepage
-![register](img/customer_homepage.png)
+![c_homepage](img/customer_homepage.png)
 
 - Booking Agent homepage
-![register](img/booking_agent_homepage.png)
+![a_homepage](img/booking_agent_homepage.png)
 
 
 
