@@ -573,80 +573,77 @@ def customer_home(customer_email,error):
 
 @app.route("/customer/flight_purchase/<customer_email>/<flight_num>/<airline_name>",methods=["GET", "POST"])
 def customer_purchase(customer_email,flight_num, airline_name):
-    try:
-        print(session["username"],customer_email)
-        if session['username'] != customer_email:
-            print("case1")
-            return render_template("upcoming_flight.html", error1="Bad Request: username does not match")
-        
+    # try:
+    print(session["username"],customer_email)
+    if session['username'] != customer_email:
+        print("case1")
+        return render_template("upcoming_flight.html", error1="Bad Request: username does not match")
+    
 
-        # if I had already buy the ticket
-        query = """select * from purchases, ticket 
-            where purchases.customer_email = %s 
-            and purchases.ticket_id = ticket.ticket_id 
-            and ticket.flight_num = %s 
-            and ticket.airline_name = %s"""
+    # if I had already buy the ticket
+    query = """select * from purchases, ticket 
+        where purchases.customer_email = %s 
+        and purchases.ticket_id = ticket.ticket_id 
+        and ticket.flight_num = %s 
+        and ticket.airline_name = %s"""
+    cursor = conn.cursor()
+    cursor.execute(query,(customer_email,flight_num, airline_name))
+    data =  cursor.fetchall()
+    cursor.close()
+
+
+    # if there is no seats left
+    query = """select seats from airplane where airline_name = %s
+    and airplane_id in (select airplane_id from flight where airline_name = %s and flight_num = %s)"""
+    cursor = conn.cursor()
+    cursor.execute(query,(airline_name, airline_name, flight_num))
+    totalSeats =  cursor.fetchone()
+    totS = totalSeats['seats']
+    cursor.close()
+    print(totalSeats, totS)
+
+    query = """SELECT count(*)
+        FROM ticket
+        WHERE airline_name = %s
+        AND flight_num = %s"""
+    cursor = conn.cursor()
+    cursor.execute(query,(airline_name, flight_num))
+    soldSeats =  cursor.fetchone()
+    sldS = soldSeats['count(*)']
+    cursor.close()
+    
+    if sldS == totS:
+        print('NO SEATS: soldSeats == totalSeats')
+        return render_template("upcoming_flight.html", error1 = "No seats left for the flight.")
+
+    elif data:
+        print("Now we are here Customer purchase")
+        return render_template("customer_home.html",status = "You have already bought the ticket")
+
+    else: # if I haven't buy the ticket
+
+        query = "select max(ticket_id) from purchases"
         cursor = conn.cursor()
-        cursor.execute(query,(customer_email,flight_num, airline_name))
-        data =  cursor.fetchall()
+        cursor.execute(query)
+        data = cursor.fetchall()
         cursor.close()
 
-        # if there is no seats left
-        query = """SELECT airplane.seats
-            FROM ticket, flight, airplane
-            WHERE ticket.airline_name = flight.airline_name
-            AND ticket.flight_num = flight.flight_num
-            AND flight.airplane_id = airplane.airplane_id
-            AND flight.airline_name = %s
-            AND flight.flight_num = %s"""
+        # if this ticket id already exists
+        if data[0]["max(ticket_id)"]:
+            ticket_id = data[0]["max(ticket_id)"]+1
+
+        else:
+            ticket_id = 1
         cursor = conn.cursor()
-        cursor.execute(query,(airline_name, flight_num))
-        totalSeats =  cursor.fetchone()
-        totS = totalSeats['seats']
+        query1 = "insert into ticket values(%s, %s, %s)"
+        cursor.execute(query1,(ticket_id,airline_name,flight_num))
+        query2 = "INSERT INTO purchases(ticket_id,customer_email,purchase_date) VALUES(%s,%s,%s)" 
+        cursor.execute(query2, (ticket_id, customer_email, datetime.datetime.now().strftime('%Y-%m-%d')))
         cursor.close()
-
-        query = """SELECT count(*)
-            FROM ticket
-            WHERE airline_name = %s
-            AND flight_num = %s"""
-        cursor = conn.cursor()
-        cursor.execute(query,(airline_name, flight_num))
-        soldSeats =  cursor.fetchone()
-        sldS = soldSeats['count(*)']
-        cursor.close()
-        
-        if sldS == totS:
-            print('NO SEATS: soldSeats == totalSeats')
-            return render_template("upcoming_flight.html", error1 = "No seats left for the flight.")
-
-        elif data:
-            print("Now we are here Customer purchase")
-            return render_template("customer_home.html",status = "You have already bought the ticket")
-
-        else: # if I haven't buy the ticket
-
-            query = "select max(ticket_id) from purchases"
-            cursor = conn.cursor()
-            cursor.execute(query)
-            data = cursor.fetchall()
-            cursor.close()
-
-            # if this ticket id already exists
-            if data[0]["max(ticket_id)"]:
-                ticket_id = data[0]["max(ticket_id)"]+1
-
-            else:
-                ticket_id = 1
-            cursor = conn.cursor()
-            query1 = "insert into ticket values(%s, %s, %s)"
-            cursor.execute(query1,(ticket_id,airline_name,flight_num))
-            query2 = "INSERT INTO purchases(ticket_id,customer_email,purchase_date) VALUES(%s,%s,%s)" 
-            cursor.execute(query2, (ticket_id, customer_email, datetime.datetime.now().strftime('%Y-%m-%d')))
-            cursor.close()
-            conn.commit()
-            return render_template("customer_home.html",status = "You have successfully buy the ticket!")
-    except:
-        return render_template("upcoming_flight.html",error1 = "Bad Request")
+        conn.commit()
+        return render_template("customer_home.html",status = "You have successfully buy the ticket!")
+    # except:
+    #     return render_template("upcoming_flight.html",error1 = "Bad Request")
 
 # Looks okay???? [之前month问题]==================
 # Agent
@@ -947,15 +944,10 @@ def agent_purchase(agent_email, flight_num, airline_name):
         cursor.close()
 
         # if there is no seats left
-        query = """SELECT airplane.seats
-            FROM ticket, flight, airplane
-            WHERE ticket.airline_name = flight.airline_name
-            AND ticket.flight_num = flight.flight_num
-            AND flight.airplane_id = airplane.airplane_id
-            AND flight.airline_name = %s
-            AND flight.flight_num = %s"""
+        query = """select seats from airplane where airline_name = %s
+        and airplane_id in (select airplane_id from flight where airline_name = %s and flight_num = %s)"""
         cursor = conn.cursor()
-        cursor.execute(query,(airline_name, flight_num))
+        cursor.execute(query,(airline_name, airline_name, flight_num))
         totalSeats =  cursor.fetchone()
         totS = totalSeats['seats']
         cursor.close()
@@ -1173,8 +1165,8 @@ def staff_home(staff_email, error):
 			print("emmm3")
 			a_date = request.form['arrival_date']
 			a_start = datetime.datetime.strptime(a_date, '%Y-%m-%d')
-			dd = "and '"+ str(a_start)[:10] +"' <=arrival_time"
-			query += query
+			add = "and '"+ str(a_start)[:10] +"' >=arrival_time"
+			query += add
 		if request.form['flight'] :
 			print("emmm1")
 			flight_num = request.form['flight'] 
@@ -1552,14 +1544,14 @@ def detailed_reports(staff_email):
         if session['username'] != staff_email:
             print('Incorrect Username')
             return render_template("login.html", error="Incorrect Username")
-            
+
         # set date names
         today = datetime.date.today()
         lastMonth = today - datetime.timedelta(days=31)
         lastYear = today - datetime.timedelta(days=365)
-        
+        # print(type(today.year), type(lastYear.year))
+
         # get the num of tkt last month
-        
         query = """select COUNT(ticket.ticket_id) 
             from purchases, ticket 
             where ticket.airline_name = %s 
@@ -1667,7 +1659,7 @@ def detailed_reports(staff_email):
             
             # print(type(begin_month[0]), type(begin_month[1]))
             curM = [begin_month[0], begin_month[1]]
-            print('here4')
+            # print('here4')
 
             if gap > 0:
                 while (curM[0] != thisMonth[0]) or ((curM[1]-1) != thisMonth[1]):
@@ -1679,9 +1671,9 @@ def detailed_reports(staff_email):
                         curM[0] += 1
                         curM[1] = 1
 
-            print('here5')
+            # print('here5')
             if gap == 0:
-                print('here1')
+                # print('here1')
                 print(curM[1] != thisMonth[1])
                 while (curM[1]-1) != thisMonth[1]:
                     nameM = str(curM[0])+'-'+str(curM[1])
@@ -1706,7 +1698,6 @@ def detailed_reports(staff_email):
                     # print('here1')
                     
             # print('here7')
-            # x_axis = [month[i] for i in range(begin_month,begin_month+12)]
             x_axis = list(pairs.keys())
             ticketNum = []
             for i in x_axis:
