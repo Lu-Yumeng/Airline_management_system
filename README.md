@@ -20,6 +20,8 @@ Using this system, customers can search for flights,purchase flights ticket,view
 - [main_code](/main_code.py): all back-end logic
 - [templates](/templates): all front-end html file
 
+To run the project, first use ```Solution_ProjectPart2_create_tables_Fall_2021_v1.sql``` to set up SQL databases with  name ```airline_management_database```. Then run [main_code.py](main_code.py) file and visit [http://localhost:5000](http://localhost:5000). 
+
 ## Project Overview
 - Login page
 ![login](img/login.png)
