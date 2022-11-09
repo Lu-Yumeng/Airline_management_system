@@ -28,13 +28,13 @@ Using this system, customers can search for flights,purchase flights ticket,view
 ![register](img/register.png)
 
 - Flights Search page
-![register](img/serach page.png)
+![register](img/serach_page.png)
 
 - Customer Homepage
-![register](img/customer homepage.png)
+![register](img/customer_homepage.png)
 
 - Booking Agent homepage
-![register](img/booking agent homepage.png)
+![register](img/booking_agent_homepage.png)
 
 
 
